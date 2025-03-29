@@ -1,1 +1,658 @@
-Hello World
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Typing Invaders - Waves & Difficulty Update</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #000010; overflow: hidden; }
+    #gameCanvas { display: block; margin: 0 auto; background: #000010; border: 2px solid #405080; transition: border-color 0.1s ease-out; }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas() { canvas.height = window.innerHeight; canvas.width = 600; }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  // === Color Palette Constants ===
+  const COLOR_BACKGROUND = "#000010"; const COLOR_STARS = "#FFFFFF"; const COLOR_PLAYER = "#00FF00"; const COLOR_PLAYER_SHADOW = "#008000"; const COLOR_PLAYER_ERROR = "#FF0000"; const COLOR_PLAYER_ERROR_SHADOW = "#800000"; const COLOR_ENEMY_DEFAULT = "#FF8000"; const COLOR_ENEMY_LOCKED = "#FFFF00"; const COLOR_ENEMY_PENDING = "#FFFFFF"; const COLOR_ENEMY_PENDING_SHADOW = "yellow"; const COLOR_ENEMY_HIT = "#FF0000"; const COLOR_ENEMY_HIT_SHADOW = "#800000"; const COLOR_PROJECTILE = "#00FF00"; const COLOR_PROJECTILE_SHADOW = "#00FF00"; const COLOR_TEXT_UNMATCHED = "#FFFFFF"; const COLOR_TEXT_MATCHED = "#00FF00"; const COLOR_HUD_TEXT = "#FFFF00"; const COLOR_HUD_SHADOW = "#FFA500"; const COLOR_HUD_BORDER = "#00FFFF"; const COLOR_METER_BORDER = "#FFFFFF"; const COLOR_METER_FILL_START = "#0080FF"; const COLOR_METER_FILL_END = "#80FFFF"; const COLOR_METER_GLOW = "#80FFFF"; const COLOR_EXPLOSION_SMALL = "rgba(255, 100, 0, "; const COLOR_EXPLOSION_SMALL_SHADOW = "red"; const COLOR_EXPLOSION_LARGE = "rgba(255, 255, 150, "; const COLOR_EXPLOSION_LARGE_SHADOW = "orange"; const COLOR_ENGINE_GLOW = "rgba(255, 165, 0, 0.7)";
+
+  // === Starfield Setup ===
+  const STAR_LAYERS = [ { count: 50, speedMin: 0.2, speedMax: 0.4, size: 1, alpha: 0.5 }, { count: 40, speedMin: 0.5, speedMax: 0.8, size: 1.5, alpha: 0.8 }, { count: 30, speedMin: 0.9, speedMax: 1.2, size: 2, alpha: 1.0 } ];
+  let starField = [];
+  function initStars() { starField = []; STAR_LAYERS.forEach((layer)=>{ for (let i=0; i<layer.count; i++){ const speed=layer.speedMin+Math.random()*(layer.speedMax-layer.speedMin); starField.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, size:layer.size, speed:speed, alpha:layer.alpha }); } }); starField.sort((a,b)=>a.speed-b.speed); }
+  function updateStars() { starField.forEach(star=>{ star.y+=star.speed; if(star.y>canvas.height){ star.y=0; star.x=Math.random()*canvas.width; } }); }
+  function drawStars() { starField.forEach(star=>{ ctx.fillStyle=COLOR_STARS; ctx.globalAlpha = star.alpha; ctx.fillRect(star.x,star.y,star.size,star.size); }); ctx.globalAlpha = 1.0; }
+  // === END Starfield ===
+
+  const sourceWords = [
+  // Length 3
+  "ace", "aim", "ask", "bag", "big", "box", "cap", "cat", "cup", "den", "dog", "dry", "ear", "eat", "fly", "fog", "gap", "get", "hat", "hen", "ice", "ink", "jar", "jet", "key", "kin", "lap", "log", "map", "nap", "oar", "peg", "ram", "run", "sag", "sun", "tap", "top", "use", "van", "wax", "yet", "zip",
+  // Length 4
+  "able", "aqua", "bake", "blue", "calm", "code", "damp", "dark", "each", "echo", "fade", "fire", "gain", "game", "hack", "hike", "idea", "jade", "jump", "keen", "kite", "lake", "lava", "maze", "moon", "neat", "oath", "pace", "pink", "quad", "quiz", "race", "safe", "star", "talk", "task", "unit", "vast", "view", "wage", "yarn", "zone",
+  // Length 5
+  "about", "apple", "basic", "brave", "catch", "chase", "dance", "dream", "early", "earth", "faith", "field", "ghost", "giant", "happy", "image", "input", "jewel", "jolly", "khaki", "label", "laser", "magic", "noble", "ocean", "panel", "pixel", "queen", "quest", "raise", "robot", "scale", "scope", "table", "timer", "uncle", "ultra", "valid", "water", "yield", "zebra",
+  // Length 6
+  "aboard", "action", "beacon", "bounce", "camera", "cancel", "debate", "delete", "effect", "energy", "fabric", "format", "galaxy", "garden", "hacker", "handle", "impact", "jacket", "joystick", "kernel", "kettle", "launch", "letter", "market", "narrow", "object", "palace", "python", "random", "salary", "script", "target", "unique", "vector", "velvet", "waffle", "widget", "yellow", "zoning",
+  // Length 7
+  "abandon", "ability", "balance", "breathe", "capture", "decline", "develop", "eclipse", "execute", "factory", "firefly", "gallery", "gravity", "habitat", "history", "illegal", "install", "journey", "justify", "keyword", "kinetic", "landing", "library", "machine", "network", "operate", "package", "quality", "reality", "salvage", "tangent", "uniform", "venture", "welcome", "xylogen", "younger", "zealous",
+  // Length 8
+  "absolute", "activate", "backpack", "boundary", "calendar", "compiler", "damaging", "database", "economic", "ethernet", "facility", "function", "gasoline", "graphics", "habitual", "hardware", "identify", "internet", "joystick", "junction", "keyboard", "laminate", "language", "maintain", "navigate", "obedient", "parallel", "question", "rainfall", "saturate", "tangible", "ultimate", "valuable", "warranty", "yachting", "yourself", "zymology",
+  // Length 9
+  "abundance", "algorithm", "beautiful", "bandwidth", "calculate", "component", "dashboard", "debugging", "elaborate", "effective", "fabricate", "framework", "gitignore", "guarantee", "happiness", "hyperlink", "immediate", "interface", "javascript", "judgement", "keystroke", "knowledge", "landscape", "localhost", "magnitude", "narrative", "objective", "palatable", "qualified", "rearrange", "satellite", "technical", "uncertain", "vaccinate", "warehouse", "xenophobe", "yesterday", "zoologist",
+  // Length 10
+  "accessible", "accelerate", "background", "capability", "checkpoint", "deactivate", "deployment", "efficiency", "encryption", "filesystem", "generation", "historical", "horizontal", "illustrate", "initialize", "jeopardize", "kidnapping", "laboratory", "mechanical", "noticeable", "occupation", "percentage", "quarantine", "reasonable", "resolution", "scattering", "technology", "understand", "validation", "wastewater", "xenophobia", "youngsters", "zealousness",
+  // Length 11
+  "abandonment", "application", "calibration", "combination", "declaration", "electronics", "environment", "fabrication", "facilitate", "generalized", "handicapped", "immediately", "inheritance", "justification", "logarithmic", "maintenance", "manipulate", "necessitate", "observation", "painstaking", "placeholder", "qualitative", "realization", "satisfactory", "temperature", "unbelievable", "vaccination", "whereabouts", "xylocarpous", "yachtsmanship", "zooplankton",
+  // Length 12
+  "abbreviation", "asynchronous", "breakthrough", "broadcasting", "cancellation", "connectivity", "deliberation", "dependencies", "economically", "familiarized", "gastronomic", "headquarters", "illumination", "juxtaposition", "knowledgeable", "localization", "manufacturer", "neighborhood", "objectionable", "optimization", "particularly", "productivity", "quantitative", "radioactivity", "safeguarding", "technological", "transmission", "unacceptable", "vaporization", "virtualization", "weatherizing", "xylophonists", "yesterevening", "zealousnesses",
+  // Length 13
+  "accommodation", "authentication", "benchmarkable", "characteristic", "certification", "comprehension", "configuration", "demonstration", "documentation", "environmental", "exceptionally", "factorization", "fragmentation", "globalization", "hybridization", "identification", "implementation", "infrastructure", "intellisense", "liberalization", "magnification", "naturalization", "orchestration", "organizational", "participation", "quantification", "recommendation", "representation", "simplification", "synchronization", "transportation", "understanding", "waterproofing", "xenotransplant", "yachtclubbing", "zymotechniques",
+  // Length 14
+  "acknowledgment", "appropriateness", "collaboratively", "confidentiality", "contextualized", "decriminalized", "electromagnetic", "familiarization", "geolocalization", "homogenization", "instrumentation", "interoperability", "jurisdictional", "miniaturization", "nonnegotiable", "objectoriented", "parallelizable", "qualification", "rationalization", "standardization", "technologically", "transformation", "unconventional", "vascularization", "weatherability", "xerographically", "zwitterionicly",
+  // Length 15
+  "accompanimental", "biotransformation", "conceptualization", "decommodification", "environmentalism", "functionalization", "georeferencingly", "heterogeneously", "individualization", "juxtaposednesses", "knowledgeableness", "longitudinality", "microprocessing", "nationalistically", "operationalized", "professionalized", "quarterfinalist", "representational", "straightforwardly", "telecommunication", "uncontrollability", "weatherproofing", "xylophonistically", "zwitterionically"
+];
+const newWordsEasy = sourceWords.filter(word => word.length >= 3 && word.length <= 4);
+const newWordsMedium = sourceWords.filter(word => word.length >= 5 && word.length <= 6);
+const newWordsHard = sourceWords.filter(word => word.length >= 7 && word.length <= 10);
+const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.length <= 15);
+
+
+  // === Game State ===
+  let gameState = 'start'; // 'start', 'waveStart', 'playing', 'gameOver', 'gameWon'
+  let currentWave = 1;
+  const maxWaves = 5;
+  let enemies = [];
+  let projectiles = [];
+  let typed = "";
+  let score = 0;
+  let lastSpawnTime = 0;
+  let totalKeystrokes = 0;
+  let correctKeystrokes = 0;
+  let explosions = [];
+  let lockedEnemyId = null;
+  let comboMeterCount = 0;
+  const BASE_COMBO_MAX = 10;
+  const COMBO_INCREASE_PER_MULTIPLIER = 5;
+  let scoreMultiplier = 1;
+  let consecutiveCombos = 0;
+  const SCORE_PER_LETTER = 3;
+  let keyHistory = [];
+  const MAX_KEY_HISTORY = 15;
+  let isShaking = false;
+  const shakeDuration = 150;
+  let shakeStartTime = 0;
+  const shakeIntensity = 3;
+  let errorFlashActive = false;
+  const errorFlashDuration = 150;
+  let errorFlashStartTime = 0;
+  const defaultBorderColor = "#405080";
+  const errorBorderColor = "red";
+  const ENEMY_HIT_FLASH_DURATION = 120;
+  let spawnInterval = 2000; // Base spawn interval, updated by wave config
+  let enemyIdCounter = 1;
+
+  // Wave-specific state
+  let enemiesToSpawnThisWave = 0;
+  let enemiesSpawnedThisWave = 0;
+  let enemiesDestroyedThisWave = 0;
+
+  // Configure wave parameters (Updated again for specific difficulty mix & frequency)
+  function getWaveConfig(wave) {
+      switch(wave) {
+          case 1: return {
+              wordList: [...newWordsEasy],
+              count: 15,
+              interval: 1100,
+              speedMultiplier: 0.9
+          };
+          case 2: return {
+              wordList: [...newWordsEasy, ...newWordsMedium],
+              count: 15,
+              interval: 1100,
+              speedMultiplier: 0.9
+          };
+          case 3: return {
+              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard], 
+              count: 15,
+              interval: 1100,
+              speedMultiplier: 0.8
+          };
+          case 4: return {
+             
+              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard, ...newWordsVeryHard],
+              count: 15,
+              interval: 1100,
+              speedMultiplier: 0.8
+          };
+          case 5: return {
+              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard, ...newWordsVeryHard], 
+              count: 20,
+              interval: 1100,
+              speedMultiplier: 0.8
+          };
+          default: return { 
+               wordList: newWordsEasy,
+               count: 5,
+               interval: 1100,
+               speedMultiplier: 0.9
+          };
+      }
+  }
+  function resetGameState() {
+      enemies=[]; projectiles=[]; typed=""; score=0; lastSpawnTime=0; totalKeystrokes=0; correctKeystrokes=0; explosions=[]; lockedEnemyId=null;
+      comboMeterCount=0; scoreMultiplier=1; consecutiveCombos=0; isShaking=false; errorFlashActive=false; canvas.style.borderColor=defaultBorderColor; enemyIdCounter=1; keyHistory = [];
+      // Reset wave state
+      currentWave = 1;
+      enemiesToSpawnThisWave = 0;
+      enemiesSpawnedThisWave = 0;
+      enemiesDestroyedThisWave = 0;
+  }
+
+  function startGame() {
+      // Can start from 'start', 'gameOver', or 'gameWon'
+      if (gameState === 'start' || gameState === 'gameOver' || gameState === 'gameWon') {
+          resetGameState();
+          // Immediately go to the first wave start screen
+          setupWave(currentWave);
+          gameState = 'waveStart';
+      }
+  }
+
+  // Setup parameters for the current wave
+  function setupWave(wave) {
+      const config = getWaveConfig(wave);
+      enemiesToSpawnThisWave = config.count;
+      spawnInterval = config.interval;
+      enemiesSpawnedThisWave = 0;
+      enemiesDestroyedThisWave = 0;
+      // Clear any leftover state from previous wave/game
+      enemies = [];
+      projectiles = [];
+      typed = "";
+      lockedEnemyId = null;
+      keyHistory = []; // Clear visual input history for new wave
+  }
+
+  // Select word based on current wave config
+  function randomWord() {
+      const config = getWaveConfig(currentWave);
+      const list = config.wordList;
+      if (!list || list.length === 0) {
+        console.error("Word list is empty for wave:", currentWave);
+        return "error"; // Fallback word
+      }
+      return list[Math.floor(Math.random()*list.length)];
+  }
+
+  // Spawn enemy, stopping after wave limit is reached
+  function spawnEnemy() {
+      // Check if we should spawn more enemies for this wave
+      if (enemiesSpawnedThisWave >= enemiesToSpawnThisWave) {
+          return; // Don't spawn more than planned for the wave
+      }
+
+      const word=randomWord();
+      const config = getWaveConfig(currentWave); // Get speed multiplier
+      const rf=0.8+0.4*Math.random();
+      const bs=3 * config.speedMultiplier; // Apply speed multiplier
+      const sp=(bs/word.length)*rf; const fontSize=16; ctx.font=`${fontSize}px 'Courier New'`; const textWidth=ctx.measureText(word).width; const pixelSize=5; const invaderPatternCols=7; const enemyVisualWidth=invaderPatternCols*pixelSize; const requiredWidth=Math.max(enemyVisualWidth,textWidth);
+      const padding=10; const minX=(requiredWidth/2)+padding; const maxX=canvas.width-(requiredWidth/2)-padding; if(maxX<=minX){ console.warn(`Word "${word}" too long for screen width at wave ${currentWave}, skipping spawn.`); return; } const xPos=Math.random()*(maxX-minX)+minX;
+      enemies.push({ id:enemyIdCounter++, word, x:xPos, y:0, speed:sp, isPendingDestruction:false, isHitFlashing: false, hitFlashStartTime: 0 });
+      enemiesSpawnedThisWave++; // Track spawned enemy
+  }
+
+  function matchedPrefixLength(word, typedInput) { let mc=0; for(let i=0; i<word.length && i<typedInput.length; i++){ if(word[i]===typedInput[i]){mc++;}else{break;} } return mc; }
+
+  function createExplosion(x, y, size='large') { let props={}; if(size==='small'){ props={r:0,mR:18,eR:0.9,a:0.9,fR:0.08,c:COLOR_EXPLOSION_SMALL,s:COLOR_EXPLOSION_SMALL_SHADOW,sB:10}; }else{ props={r:0,mR:45,eR:0.6,a:1.0,fR:0.02,c:COLOR_EXPLOSION_LARGE,s:COLOR_EXPLOSION_LARGE_SHADOW,sB:20}; } explosions.push({x,y, radius:props.r, maxRadius:props.mR, expandRate:props.eR, alpha:props.a, fadeRate:props.fR, color:props.c, shadow:props.s, shadowBlur:props.sB}); }
+  function updateExplosions() { for(let i=explosions.length-1; i>=0; i--){ const ex=explosions[i]; ex.radius+=ex.expandRate; ex.alpha-=ex.fadeRate; if(ex.alpha<=0||ex.radius>=ex.maxRadius){ explosions.splice(i,1); } } }
+  function drawExplosions() { explosions.forEach(ex=>{ ctx.beginPath(); ctx.arc(ex.x,ex.y,ex.radius,0,Math.PI*2); ctx.fillStyle=ex.color+`${ex.alpha})`; ctx.shadowColor=ex.shadow; ctx.shadowBlur=ex.shadowBlur; ctx.fill(); ctx.shadowBlur=0; }); }
+
+  // Update projectile logic to track destroyed enemies
+  function updateProjectiles(currentTime) {
+      for(let i=projectiles.length-1; i>=0; i--){
+          const p=projectiles[i];
+          const tE=enemies.find(e=>e.id===p.targetId);
+          if(!tE){projectiles.splice(i,1); continue;} // Target gone
+          const dx=tE.x-p.x; const dy=tE.y-p.y;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<15){ // Projectile reached target vicinity
+              if(p.type==='destroyer'){
+                  createExplosion(tE.x,tE.y,'large');
+                  const dId=p.targetId;
+                  enemies=enemies.filter(e=>e.id!==dId); // Remove enemy
+                  projectiles.splice(i,1); // Remove projectile
+                  if(lockedEnemyId===dId){lockedEnemyId=null;} // Clear lock if it was the locked one
+                  enemiesDestroyedThisWave++; // Track destroyed enemy for wave completion
+                  continue; // Process next projectile
+              }else if(p.type==='visual'){
+                  if(!tE.isPendingDestruction){ // Don't hit-flash if already marked for destruction
+                       createExplosion(tE.x,tE.y,'small');
+                       tE.isHitFlashing = true;
+                       tE.hitFlashStartTime = currentTime;
+                  }
+                  projectiles.splice(i,1); // Remove visual projectile
+                  continue; // Process next projectile
+              }
+          }else{ // Projectile still travelling
+              const ang=Math.atan2(dy,dx);
+              const sp=8; // Projectile speed
+              p.x+=Math.cos(ang)*sp;
+              p.y+=Math.sin(ang)*sp;
+          }
+      }
+  }
+  function drawProjectiles() { projectiles.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle=COLOR_PROJECTILE; ctx.shadowColor=COLOR_PROJECTILE_SHADOW; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; }); }
+
+  // === Update and Draw for PLAYING state ===
+  function updatePlaying(currentTime) {
+      // Update effects timers
+      if(isShaking&&(currentTime-shakeStartTime>=shakeDuration)){ isShaking=false; }
+      if(errorFlashActive&&(currentTime-errorFlashStartTime>=errorFlashDuration)){ errorFlashActive=false; canvas.style.borderColor=defaultBorderColor; }
+      enemies.forEach(enemy => { if (enemy.isHitFlashing && (currentTime - enemy.hitFlashStartTime >= ENEMY_HIT_FLASH_DURATION)) { enemy.isHitFlashing = false; } });
+
+      // Spawn new enemies if needed for the wave
+      if(enemiesSpawnedThisWave < enemiesToSpawnThisWave && currentTime-lastSpawnTime>spawnInterval){
+          spawnEnemy();
+          lastSpawnTime=currentTime;
+      }
+
+      // Update game elements
+      updateStars();
+      updateProjectiles(currentTime); // Handles enemy destruction and tracking
+      updateExplosions();
+
+      // Update enemy positions and check for game over
+      for(let i=enemies.length-1; i>=0; i--){
+          const enemy=enemies[i];
+          if(!enemy.isPendingDestruction){ enemy.y+=enemy.speed; } // Only move if not being destroyed
+          // Check if enemy reached bottom
+          if(enemy.y > canvas.height-20){ // Adjust Y threshold as needed
+               gameState='gameOver';
+               return; // Exit update loop immediately on game over
+          }
+      }
+
+      // Check for wave completion
+      // Condition: All enemies for the wave have been spawned AND all active enemies have been destroyed
+      if (enemiesSpawnedThisWave >= enemiesToSpawnThisWave && enemies.length === 0) {
+          if (currentWave < maxWaves) {
+              currentWave++;
+              setupWave(currentWave); // Prepare for the next wave
+              gameState = 'waveStart'; // Go to the wave start screen
+          } else {
+              // Last wave completed!
+              gameState = 'gameWon';
+          }
+      }
+  }
+
+  function drawPlaying(currentTime) {
+      drawStars();
+      drawProjectiles();
+      drawExplosions();
+      drawShip();
+      drawHUD(); // Score and Accuracy
+      drawKeyHistory(); // Current typed input visual
+      drawComboMeter();
+      drawMultiplier();
+
+      // Draw current wave number during play
+      ctx.font = "bold 18px Arial";
+      ctx.fillStyle = COLOR_HUD_TEXT;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = COLOR_HUD_SHADOW;
+      ctx.shadowBlur = 5;
+      ctx.fillText(`Wave: ${currentWave}/${maxWaves}`, canvas.width / 2, 30);
+      ctx.shadowBlur = 0;
+      ctx.textAlign = 'start'; // Reset alignment
+
+      // Draw enemies
+      enemies.forEach(enemy=>{ drawEnemy(enemy,typed); });
+  }
+  // === END Update/Draw for PLAYING state ===
+
+  // === Draw for START, WAVESTART, GAMEOVER, GAMEWON states ===
+  function drawStartScreen() {
+      drawStars();
+      ctx.fillStyle=COLOR_STARS; ctx.font="40px Arial"; ctx.textAlign='center'; ctx.fillText("Typing Invaders",canvas.width/2,canvas.height/2-40); ctx.font="24px Arial";
+      const startText = "Press SPACE to Start";
+      const textY = canvas.height/2 + 20;
+      // Blinking effect
+      if(Math.floor(Date.now()/500)%2===0){ ctx.fillStyle=COLOR_HUD_TEXT; } else { ctx.fillStyle = COLOR_STARS;}
+      ctx.fillText(startText,canvas.width/2, textY);
+      ctx.textAlign='start';
+  }
+
+  function drawWaveStartScreen() {
+      drawStars(); // Keep background dynamic
+      ctx.fillStyle=COLOR_STARS; ctx.font="40px Arial"; ctx.textAlign='center'; ctx.fillText(`Wave ${currentWave} Incoming!`,canvas.width/2,canvas.height/2-80); // Adjusted Y position
+
+      // --- Added Score and Accuracy Display ---
+      ctx.font="20px Arial";
+      ctx.fillStyle = COLOR_STARS;
+      ctx.fillText("Score: "+score, canvas.width/2, canvas.height/2 - 20); // Display current score
+      const accuracy = totalKeystrokes === 0 ? 100 : (correctKeystrokes / totalKeystrokes) * 100;
+      ctx.fillText("Accuracy: "+accuracy.toFixed(1)+"%", canvas.width/2, canvas.height/2 + 10); // Display current accuracy
+      // --- End Added Display ---
+
+      ctx.font="24px Arial";
+      const continueText = "Press SPACE to Begin";
+      const textY = canvas.height / 2 + 60; // Adjusted Y position
+      // Blinking effect
+       if(Math.floor(Date.now()/500)%2===0){ ctx.fillStyle=COLOR_HUD_TEXT;
+      } else { ctx.fillStyle = COLOR_STARS;}
+      ctx.fillText(continueText,canvas.width/2, textY);
+      // Optionally show wave specific info
+      const config = getWaveConfig(currentWave);
+      ctx.font="18px Arial";
+      ctx.fillStyle = COLOR_STARS;
+      // Non-blinking for info
+      ctx.fillText(`Enemies: ${config.count}`, canvas.width/2, canvas.height/2 + 100); // Adjusted Y position
+      ctx.textAlign='start';
+  }
+
+  function drawGameOverScreen() {
+      drawStars(); ctx.fillStyle="rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle=COLOR_STARS; ctx.font="40px Arial"; ctx.textAlign='center'; ctx.fillText("GAME OVER",canvas.width/2,canvas.height/2-60); // Adjusted Y
+      ctx.font="30px Arial"; ctx.fillText("Final Score: "+score,canvas.width/2,canvas.height/2-10); // Adjusted Y
+
+      // --- Added Waves Completed Display ---
+      const wavesCompleted = currentWave - 1; // Player failed on currentWave, so completed one less
+      ctx.font="20px Arial";
+      ctx.fillText("Waves Completed: " + wavesCompleted + "/" + maxWaves, canvas.width / 2, canvas.height / 2 + 20);
+      // --- End Added Display ---
+
+      const accuracy=totalKeystrokes===0?100:(correctKeystrokes/totalKeystrokes)*100; ctx.font="20px Arial"; ctx.fillText("Accuracy: "+accuracy.toFixed(1)+"%",canvas.width/2,canvas.height/2+50); // Adjusted Y
+      ctx.font="22px Arial";
+      const restartText = "Press SPACE to Play Again";
+      const textY = canvas.height / 2 + 100; // Adjusted Y
+      if(Math.floor(Date.now()/500)%2===0){ctx.fillStyle=COLOR_HUD_TEXT;}else{ctx.fillStyle=COLOR_STARS;} ctx.fillText(restartText, canvas.width/2, textY);
+      ctx.textAlign='start';
+   }
+
+   function drawGameWonScreen() {
+      drawStars(); ctx.fillStyle="rgba(0, 50, 0, 0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height); // Greenish overlay
+      ctx.fillStyle=COLOR_PLAYER; ctx.font="40px Arial"; ctx.textAlign='center'; ctx.fillText("YOU WON!",canvas.width/2,canvas.height/2-60); // Adjusted Y
+      ctx.fillStyle=COLOR_STARS;
+      ctx.font="30px Arial"; ctx.fillText("Final Score: "+score,canvas.width/2,canvas.height/2-10); // Adjusted Y
+
+      // --- Added Waves Completed Display ---
+      ctx.font="20px Arial";
+      ctx.fillText("Waves Completed: " + maxWaves + "/" + maxWaves, canvas.width / 2, canvas.height / 2 + 20); // Display max waves as completed
+      // --- End Added Display ---
+
+      const accuracy=totalKeystrokes===0?100:(correctKeystrokes/totalKeystrokes)*100; ctx.font="20px Arial"; ctx.fillText("Accuracy: "+accuracy.toFixed(1)+"%",canvas.width/2,canvas.height/2+50); // Adjusted Y
+      ctx.font="22px Arial"; const restartText = "Press SPACE to Play Again";
+      const textY = canvas.height / 2 + 100; // Adjusted Y
+      if(Math.floor(Date.now()/500)%2===0){ctx.fillStyle=COLOR_HUD_TEXT;}else{ctx.fillStyle=COLOR_STARS;} ctx.fillText(restartText, canvas.width/2, textY); ctx.textAlign='start';
+   }
+
+
+  // --- Component Drawing Functions ---
+  function drawShip() { const pixelSize=5; const playerShipPattern=[[0,0,1,0,0],[0,1,1,1,0],[1,1,1,1,1],[1,0,1,0,1]]; const pR=playerShipPattern.length; const pC=playerShipPattern[0].length; const sW=pC*pixelSize; const sH=pR*pixelSize; const sX=canvas.width/2; const sBY=canvas.height-30; const startX=sX-sW/2; const startY=sBY-sH; const shipColor=errorFlashActive?COLOR_PLAYER_ERROR:COLOR_PLAYER; const shadowColor=errorFlashActive?COLOR_PLAYER_ERROR_SHADOW:COLOR_PLAYER_SHADOW; ctx.fillStyle=shipColor; ctx.shadowColor=shadowColor; ctx.shadowBlur=10; for(let r=0; r<pR; r++){ for(let c=0; c<pC; c++){ if(playerShipPattern[r][c]===1){ ctx.fillRect(startX+c*pixelSize,startY+r*pixelSize,pixelSize,pixelSize); } } } ctx.shadowBlur=0; if(!errorFlashActive){ const glowHeight=5+Math.random()*4; const glowY=sBY+2; ctx.fillStyle=COLOR_ENGINE_GLOW; ctx.shadowColor=COLOR_ENGINE_GLOW; ctx.shadowBlur=8; ctx.fillRect(sX-pixelSize*1.5,glowY,pixelSize,glowHeight); ctx.fillRect(sX+pixelSize*0.5,glowY,pixelSize,glowHeight); ctx.shadowBlur=0; } }
+  function drawEnemy(enemy, typedInput) { const isLocked=(lockedEnemyId===enemy.id); const invaderColor=enemy.isPendingDestruction?COLOR_ENEMY_PENDING:(enemy.isHitFlashing?COLOR_ENEMY_HIT:(isLocked?COLOR_ENEMY_LOCKED:COLOR_ENEMY_DEFAULT)); const alpha=enemy.isPendingDestruction&&Math.floor(Date.now()/150)%2===0?0.5:1.0; ctx.globalAlpha=alpha; const fontSize=16; const pixelSize=5; const invaderPattern=[[0,1,0,0,0,1,0],[1,1,1,1,1,1,1],[1,0,1,1,1,0,1],[1,0,0,1,0,0,1],[0,1,1,0,1,1,0]]; const pR=invaderPattern.length; const pC=invaderPattern[0].length; const iW=pC*pixelSize; const iH=pR*pixelSize; const sX=enemy.x-iW/2; const iY=enemy.y-iH-5; ctx.fillStyle=invaderColor; ctx.shadowColor=enemy.isPendingDestruction?COLOR_ENEMY_PENDING_SHADOW:(enemy.isHitFlashing?COLOR_ENEMY_HIT_SHADOW:(isLocked?COLOR_ENEMY_LOCKED:invaderColor)); ctx.shadowBlur=isLocked||enemy.isPendingDestruction||enemy.isHitFlashing?12:5; for(let r=0; r<pR; r++){ for(let c=0; c<pC; c++){ if(invaderPattern[r][c]===1){ ctx.fillRect(sX+c*pixelSize,iY+r*pixelSize,pixelSize,pixelSize); } } } ctx.shadowBlur=0; ctx.font=`${fontSize}px 'Courier New'`; ctx.textAlign='center'; const textY=enemy.y+10; if(enemy.isPendingDestruction){ ctx.fillStyle=COLOR_TEXT_MATCHED; ctx.fillText(enemy.word,enemy.x,textY); }else{ const currentTyped=(isLocked)?typedInput:""; const matchCount=matchedPrefixLength(enemy.word,currentTyped); const matchedText=enemy.word.substring(0,matchCount); const unmatchedText=enemy.word.substring(matchCount); const fTW=ctx.measureText(enemy.word).width; const textStartX=enemy.x-fTW/2; if(isLocked&&matchCount>0){ ctx.fillStyle=COLOR_TEXT_MATCHED; const mW=ctx.measureText(matchedText).width; ctx.fillText(matchedText,textStartX+mW/2,textY); } ctx.fillStyle=COLOR_TEXT_UNMATCHED; const uW=ctx.measureText(unmatchedText).width; const mWV=ctx.measureText(matchedText).width; ctx.fillText(unmatchedText, textStartX+mWV+uW/2, textY); } ctx.textAlign='start'; ctx.globalAlpha=1.0; }
+  function drawHUD() { const hudFontSize="bold 20px Arial"; const hudColor=COLOR_HUD_TEXT; const shadowColor=COLOR_HUD_SHADOW; const shadowBlur=5; const topPadding=30; const boxPadding=5; ctx.font=hudFontSize; ctx.textAlign='left'; const accuracy=totalKeystrokes===0?100:(correctKeystrokes/totalKeystrokes)*100; const accText=accuracy.toFixed(1)+"%"; const accMetrics=ctx.measureText(accText); ctx.strokeStyle=COLOR_HUD_BORDER; ctx.lineWidth=1; ctx.strokeRect(10-boxPadding,topPadding-18-boxPadding,accMetrics.width+boxPadding*2,20+boxPadding*2); ctx.fillStyle=hudColor; ctx.shadowColor=shadowColor; ctx.shadowBlur=shadowBlur; ctx.fillText(accText,10,topPadding); ctx.font=hudFontSize; ctx.textAlign='right'; const scoreText=String(score); const scoreMetrics=ctx.measureText(scoreText); ctx.strokeStyle=COLOR_HUD_BORDER; ctx.lineWidth=1; ctx.strokeRect(canvas.width-10-scoreMetrics.width-boxPadding,topPadding-18-boxPadding,scoreMetrics.width+boxPadding*2,20+boxPadding*2); ctx.fillStyle=hudColor; ctx.shadowColor=shadowColor; ctx.shadowBlur=shadowBlur; ctx.fillText(scoreText,canvas.width-10,topPadding); ctx.shadowBlur=0; ctx.textAlign='start'; }
+  function drawComboMeter() { const mH=10; const mW=canvas.width; const mX=0; const mY=canvas.height-mH-5; const currentComboMax=BASE_COMBO_MAX+(scoreMultiplier-1)*COMBO_INCREASE_PER_MULTIPLIER; ctx.strokeStyle=COLOR_METER_BORDER; ctx.lineWidth=1; ctx.strokeRect(mX,mY,mW,mH); if(comboMeterCount>0){ const fillRatio=comboMeterCount/currentComboMax; const fillWidth=mW*fillRatio; const gradient=ctx.createLinearGradient(mX,mY,mX+mW,mY); gradient.addColorStop(0,COLOR_METER_FILL_START); gradient.addColorStop(1,COLOR_METER_FILL_END); ctx.fillStyle=gradient; ctx.shadowColor=COLOR_METER_GLOW; ctx.shadowBlur=10; ctx.fillRect(mX,mY,fillWidth,mH); ctx.shadowBlur=0; } }
+  function drawMultiplier() { if(scoreMultiplier>1){ const shipX=canvas.width/2; const shipTopY=canvas.height-30-30; const displayX=shipX+30; const displayY=shipTopY+20; ctx.font="bold 24px Arial"; ctx.fillStyle=COLOR_HUD_TEXT; ctx.shadowColor=COLOR_HUD_SHADOW; ctx.shadowBlur=8; ctx.textAlign='left'; ctx.fillText(`x${scoreMultiplier}`,displayX,displayY); ctx.shadowBlur=0; ctx.textAlign='start'; } }
+  function drawKeyHistory() { if(keyHistory.length>0){ const displayY=60; const fontSize=18; ctx.font=`${fontSize}px 'Courier New', monospace`; ctx.textBaseline='middle'; let totalWidth=0; keyHistory.forEach(entry=>{ totalWidth+=ctx.measureText(entry.char).width; }); let currentX=canvas.width/2-totalWidth/2; keyHistory.forEach(entry=>{ ctx.fillStyle=entry.correct?COLOR_TEXT_MATCHED:COLOR_PLAYER_ERROR; ctx.shadowBlur=0; ctx.fillText(entry.char,currentX,displayY); currentX+=ctx.measureText(entry.char).width; }); ctx.textBaseline='alphabetic'; } }
+  // --- END Component Drawing Functions ---
+
+  // =========================================
+  // === Global Input Listener ===
+  // =========================================
+  window.addEventListener("keydown", (e) => {
+      const keyTime = performance.now();
+
+      // --- Handle SPACE for state transitions ---
+      if (e.code === 'Space') {
+          if (gameState === 'start' || gameState === 'gameOver' || gameState === 'gameWon') {
+              startGame();
+              e.preventDefault(); // Prevent space scrolling page
+              return;
+          }
+          // Handle space on Wave Start screen
+          if (gameState === 'waveStart') {
+              gameState = 'playing';
+              lastSpawnTime = performance.now(); // Start spawning for the wave
+              e.preventDefault();
+              return;
+          }
+      }
+
+      // --- Input Handling for PLAYING state ---
+      if (gameState === 'playing') {
+
+          // --- Handle Backspace ---
+          if (e.code === 'Backspace') {
+              if (lockedEnemyId !== null || typed !== "") {
+                  typed = "";
+                  lockedEnemyId = null;
+                  keyHistory = []; // Clear visual input too when backspacing
+                  // Reset combo as the chain is broken
+                  comboMeterCount = 0;
+                  consecutiveCombos = 0;
+                  scoreMultiplier = 1;
+              }
+              e.preventDefault(); // Prevent browser back navigation
+              return; // Don't process as a letter
+          }
+
+          // --- Handle Letters ---
+          if(!/^[a-zA-Z]$/.test(e.key)) return; // Only accept letters
+
+          totalKeystrokes++;
+          const newChar = e.key.toLowerCase();
+          let projectileType='visual'; let projectileTargetId=-1;
+          let fireProjectile=false;
+          let correctKeyPressed=false;
+          let clearHistoryForNewWord = false; // Flag to control history clearing
+
+          // Determine correctness BEFORE changing state
+          if(lockedEnemyId!==null){
+              const lockedEnemy=enemies.find(e=>e.id===lockedEnemyId);
+              if(lockedEnemy && !lockedEnemy.isPendingDestruction){
+                  const potentialString=typed+newChar;
+                  correctKeyPressed = lockedEnemy.word.startsWith(potentialString);
+              } else {
+                  // Locked enemy disappeared or pending destruction, check if new char matches any other enemy start
+                  lockedEnemyId = null; // Lose lock
+                  typed = ""; // Clear typed progress
+                  const matchingEnemies=enemies.filter(enemy=>!enemy.isPendingDestruction&&enemy.word.startsWith(newChar));
+                  correctKeyPressed = matchingEnemies.length > 0;
+                  if (correctKeyPressed) { clearHistoryForNewWord = true; } // Mark history to be cleared
+              }
+          } else { // No enemy currently locked
+              const matchingEnemies=enemies.filter(enemy=>!enemy.isPendingDestruction&&enemy.word.startsWith(newChar));
+              correctKeyPressed = matchingEnemies.length > 0;
+              if (correctKeyPressed) { clearHistoryForNewWord = true; } // Mark history to be cleared
+          }
+
+          // Store history entry data (will be pushed later)
+          const historyEntry = { char: newChar, correct: correctKeyPressed };
+
+          // Clear history *before* pushing the new character if starting a new word
+          if (clearHistoryForNewWord) {
+              keyHistory = [];
+          }
+
+          // Apply game logic based on correctness
+          if(correctKeyPressed){
+              correctKeystrokes++;
+              score+=SCORE_PER_LETTER*scoreMultiplier;
+
+              // Lock onto new enemy if needed (and not already locked)
+              if(lockedEnemyId===null){ // Only lock if starting fresh or lock was lost
+                  const potentialString=newChar; // Start matching with the current correct key
+                  const matchingEnemies=enemies.filter(enemy=>!enemy.isPendingDestruction&&enemy.word.startsWith(potentialString));
+
+                  if (matchingEnemies.length > 0) {
+                      let closestEnemy = null;
+                      let minDistanceSq = Infinity; // Use squared distance to avoid sqrt
+
+                      // Player ship position (approximate bottom-center)
+                      const playerX = canvas.width / 2;
+                      // Use the 'sBY' variable value from drawShip if precise position is needed, otherwise bottom of canvas is close enough
+                      const playerY = canvas.height - 30; // Reference point on the ship
+
+                      matchingEnemies.forEach(enemy => {
+                          const dx = enemy.x - playerX;
+                          const dy = enemy.y - playerY;
+                          const distanceSq = dx*dx + dy*dy; // Squared distance
+
+                          if (distanceSq < minDistanceSq) {
+                              minDistanceSq = distanceSq;
+                              closestEnemy = enemy;
+                          }
+                      });
+
+                      // Lock onto the closest enemy found
+                      if (closestEnemy) {
+                          lockedEnemyId=closestEnemy.id;
+                          typed = newChar; // Start typing with the first correct char
+                      } else {
+                          // Fallback if something went wrong (shouldn't happen if matchingEnemies > 0)
+                          correctKeyPressed = false;
+                          typed = "";
+                      }
+
+                  } else {
+                     // No enemies match the starting character
+                     correctKeyPressed = false; // Treat as incorrect if no enemy matches
+                     typed = "";
+                  }
+
+              } else {
+                 // Already locked, just append the character
+                 typed += newChar;
+              }
+
+
+              // Process typing on locked enemy (if lock was successful or maintained)
+              if(lockedEnemyId!==null){
+                  const lockedEnemy=enemies.find(e=>e.id===lockedEnemyId);
+                  if(lockedEnemy && !lockedEnemy.isPendingDestruction){ // Check again if enemy still valid
+                      // typed was already updated above
+                      fireProjectile=true;
+                      projectileTargetId=lockedEnemy.id;
+                      const isCompletion=(lockedEnemy.word===typed);
+                      if(isCompletion){
+                          projectileType='destroyer';
+                          lockedEnemy.isPendingDestruction=true;
+                          // Don't clear typed here, wait for projectile logic.
+                      } else {
+                          projectileType='visual';
+                      }
+                  } else {
+                     // Locked enemy disappeared between check and now
+                     lockedEnemyId = null;
+                     typed = "";
+                     correctKeyPressed = false; // Treat as incorrect for combo/effects
+                     fireProjectile = false; // Don't fire
+                  }
+              }
+
+              // Push to history AFTER potential clear and state update
+              keyHistory.push(historyEntry);
+              if (keyHistory.length > MAX_KEY_HISTORY) { keyHistory.shift(); }
+
+              // Combo Meter Update (only if key was truly correct and processed)
+              if (correctKeyPressed) {
+                  comboMeterCount++;
+                  const currentComboMax=BASE_COMBO_MAX+(scoreMultiplier-1)*COMBO_INCREASE_PER_MULTIPLIER;
+                  if(comboMeterCount>=currentComboMax){
+                      consecutiveCombos++;
+                      scoreMultiplier=1+consecutiveCombos;
+                      comboMeterCount=0;
+                  }
+              }
+
+
+              // Fire Projectile
+              if(fireProjectile && projectileTargetId !== -1){
+                  const startX=canvas.width/2;
+                  const startY=canvas.height-40; // Projectile origin
+                  projectiles.push({x:startX,y:startY,targetId:projectileTargetId,type:projectileType});
+                  // If it was a destroyer, immediately clear lock/typed
+                  if (projectileType === 'destroyer') {
+                     lockedEnemyId = null;
+                     typed = "";
+                     // History persists until next word starts.
+                  }
+              }
+
+          } else { // Incorrect Key Press
+              // Push incorrect key to history
+              keyHistory.push(historyEntry);
+              if (keyHistory.length > MAX_KEY_HISTORY) { keyHistory.shift(); }
+
+              // Reset combo and apply effects
+              comboMeterCount=0;
+              consecutiveCombos=0;
+              scoreMultiplier=1;
+              if (!isShaking) { isShaking = true; shakeStartTime = keyTime; }
+              if (!errorFlashActive) { errorFlashActive = true; errorFlashStartTime = keyTime; canvas.style.borderColor = errorBorderColor; }
+          }
+      } // End playing state input handling
+  });
+  // =========================================
+  // === END Global Input Listener ===
+  // =========================================
+
+  // === Main Game Loop ===
+  function gameLoop(timestamp) {
+      const currentTime=performance.now();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.save();
+
+      // Apply screen shake if active (only during play)
+      if(isShaking && gameState === 'playing'){
+          const elapsed=currentTime-shakeStartTime;
+          const shakeX=Math.sin(elapsed/15)*shakeIntensity;
+          const shakeY=Math.cos(elapsed/20)*shakeIntensity;
+          ctx.translate(shakeX,shakeY);
+      }
+
+      // Game state logic and drawing
+      switch (gameState) {
+          case 'start':
+              updateStars(); // Keep stars moving
+              drawStartScreen();
+              break;
+          case 'waveStart':
+              updateStars(); // Keep stars moving
+              drawWaveStartScreen();
+              break;
+          case 'playing':
+              updatePlaying(currentTime); // Includes updates for stars, projectiles, enemies, wave completion check
+              // Only draw if not game over after update
+              if (gameState === 'playing') {
+                  drawPlaying(currentTime); // Draws all playing elements including wave number
+              }
+              break;
+          case 'gameOver':
+              updateStars(); // Keep stars moving
+              drawGameOverScreen();
+              break;
+          case 'gameWon':
+               updateStars(); // Keep stars moving
+               drawGameWonScreen();
+               break;
+      }
+
+      ctx.restore();
+      requestAnimationFrame(gameLoop);
+  }
+  // === END Main Game Loop ===
+
+  // --- Initial Setup ---
+  initStars();
+  requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>
