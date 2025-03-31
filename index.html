@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Typing Invaders - Waves & Difficulty Update</title>
+  <title>Typing Invaders - Delta Time Update</title>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; background: #000010; overflow: hidden; }
     #gameCanvas { display: block; margin: 0 auto; background: #000010; border: 2px solid #405080; transition: border-color 0.1s ease-out; }
@@ -19,13 +19,52 @@
   resizeCanvas();
 
   // === Color Palette Constants ===
-  const COLOR_BACKGROUND = "#000010"; const COLOR_STARS = "#FFFFFF"; const COLOR_PLAYER = "#00FF00"; const COLOR_PLAYER_SHADOW = "#008000"; const COLOR_PLAYER_ERROR = "#FF0000"; const COLOR_PLAYER_ERROR_SHADOW = "#800000"; const COLOR_ENEMY_DEFAULT = "#FF8000"; const COLOR_ENEMY_LOCKED = "#FFFF00"; const COLOR_ENEMY_PENDING = "#FFFFFF"; const COLOR_ENEMY_PENDING_SHADOW = "yellow"; const COLOR_ENEMY_HIT = "#FF0000"; const COLOR_ENEMY_HIT_SHADOW = "#800000"; const COLOR_PROJECTILE = "#00FF00"; const COLOR_PROJECTILE_SHADOW = "#00FF00"; const COLOR_TEXT_UNMATCHED = "#FFFFFF"; const COLOR_TEXT_MATCHED = "#00FF00"; const COLOR_HUD_TEXT = "#FFFF00"; const COLOR_HUD_SHADOW = "#FFA500"; const COLOR_HUD_BORDER = "#00FFFF"; const COLOR_METER_BORDER = "#FFFFFF"; const COLOR_METER_FILL_START = "#0080FF"; const COLOR_METER_FILL_END = "#80FFFF"; const COLOR_METER_GLOW = "#80FFFF"; const COLOR_EXPLOSION_SMALL = "rgba(255, 100, 0, "; const COLOR_EXPLOSION_SMALL_SHADOW = "red"; const COLOR_EXPLOSION_LARGE = "rgba(255, 255, 150, "; const COLOR_EXPLOSION_LARGE_SHADOW = "orange"; const COLOR_ENGINE_GLOW = "rgba(255, 165, 0, 0.7)";
+  const COLOR_BACKGROUND = "#000010"; const COLOR_STARS = "#FFFFFF"; const COLOR_PLAYER = "#00FF00";
+  const COLOR_PLAYER_SHADOW = "#008000"; const COLOR_PLAYER_ERROR = "#FF0000"; const COLOR_PLAYER_ERROR_SHADOW = "#800000"; const COLOR_ENEMY_DEFAULT = "#FF8000"; const COLOR_ENEMY_LOCKED = "#FFFF00";
+  const COLOR_ENEMY_PENDING = "#FFFFFF"; const COLOR_ENEMY_PENDING_SHADOW = "yellow"; const COLOR_ENEMY_HIT = "#FF0000"; const COLOR_ENEMY_HIT_SHADOW = "#800000"; const COLOR_PROJECTILE = "#00FF00";
+  const COLOR_PROJECTILE_SHADOW = "#00FF00"; const COLOR_TEXT_UNMATCHED = "#FFFFFF"; const COLOR_TEXT_MATCHED = "#00FF00"; const COLOR_HUD_TEXT = "#FFFF00"; const COLOR_HUD_SHADOW = "#FFA500";
+  const COLOR_HUD_BORDER = "#00FFFF"; const COLOR_METER_BORDER = "#FFFFFF"; const COLOR_METER_FILL_START = "#0080FF"; const COLOR_METER_FILL_END = "#80FFFF"; const COLOR_METER_GLOW = "#80FFFF";
+  const COLOR_EXPLOSION_SMALL = "rgba(255, 100, 0, "; const COLOR_EXPLOSION_SMALL_SHADOW = "red"; const COLOR_EXPLOSION_LARGE = "rgba(255, 255, 150, "; const COLOR_EXPLOSION_LARGE_SHADOW = "orange"; const COLOR_ENGINE_GLOW = "rgba(255, 165, 0, 0.7)";
 
   // === Starfield Setup ===
-  const STAR_LAYERS = [ { count: 50, speedMin: 0.2, speedMax: 0.4, size: 1, alpha: 0.5 }, { count: 40, speedMin: 0.5, speedMax: 0.8, size: 1.5, alpha: 0.8 }, { count: 30, speedMin: 0.9, speedMax: 1.2, size: 2, alpha: 1.0 } ];
+  // Define speeds in Pixels Per Second (PPS) - TUNE THESE VALUES!
+  const STAR_LAYER_PPS = [
+    { count: 50, speedMinPPS: 10, speedMaxPPS: 25, size: 1, alpha: 0.5 }, // Slowest layer
+    { count: 40, speedMinPPS: 30, speedMaxPPS: 50, size: 1.5, alpha: 0.8 }, // Medium layer
+    { count: 30, speedMinPPS: 55, speedMaxPPS: 75, size: 2, alpha: 1.0 }  // Fastest layer
+  ];
   let starField = [];
-  function initStars() { starField = []; STAR_LAYERS.forEach((layer)=>{ for (let i=0; i<layer.count; i++){ const speed=layer.speedMin+Math.random()*(layer.speedMax-layer.speedMin); starField.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, size:layer.size, speed:speed, alpha:layer.alpha }); } }); starField.sort((a,b)=>a.speed-b.speed); }
-  function updateStars() { starField.forEach(star=>{ star.y+=star.speed; if(star.y>canvas.height){ star.y=0; star.x=Math.random()*canvas.width; } }); }
+
+  function initStars() {
+      starField = [];
+      // Use the new PPS values
+      STAR_LAYER_PPS.forEach((layer) => {
+          for (let i = 0; i < layer.count; i++) {
+              // Calculate speed in PPS
+              const speedPPS = layer.speedMinPPS + Math.random() * (layer.speedMaxPPS - layer.speedMinPPS);
+              starField.push({
+                  x: Math.random() * canvas.width,
+                  y: Math.random() * canvas.height,
+                  size: layer.size,
+                  speed: speedPPS, // Store speed in PPS
+                  alpha: layer.alpha
+              });
+          }
+      });
+      starField.sort((a, b) => a.speed - b.speed); // Sort by PPS
+  }
+
+  // Modify updateStars to use dt
+  function updateStars(dt) { // Added dt parameter
+    starField.forEach(star=>{
+      // --- Apply Delta Timing to Star Movement ---
+      star.y += star.speed * dt; // speed is now in PPS
+      // --- End Delta Timing Change ---
+      if(star.y>canvas.height){ star.y=0; star.x=Math.random()*canvas.width; }
+    });
+  }
+
+  // DrawStars remains the same
   function drawStars() { starField.forEach(star=>{ ctx.fillStyle=COLOR_STARS; ctx.globalAlpha = star.alpha; ctx.fillRect(star.x,star.y,star.size,star.size); }); ctx.globalAlpha = 1.0; }
   // === END Starfield ===
 
@@ -57,11 +96,10 @@
   // Length 15
   "accompanimental", "biotransformation", "conceptualization", "decommodification", "environmentalism", "functionalization", "georeferencingly", "heterogeneously", "individualization", "juxtaposednesses", "knowledgeableness", "longitudinality", "microprocessing", "nationalistically", "operationalized", "professionalized", "quarterfinalist", "representational", "straightforwardly", "telecommunication", "uncontrollability", "weatherproofing", "xylophonistically", "zwitterionically"
 ];
-const newWordsEasy = sourceWords.filter(word => word.length >= 3 && word.length <= 4);
-const newWordsMedium = sourceWords.filter(word => word.length >= 5 && word.length <= 6);
-const newWordsHard = sourceWords.filter(word => word.length >= 7 && word.length <= 10);
-const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.length <= 15);
-
+  const newWordsEasy = sourceWords.filter(word => word.length >= 3 && word.length <= 4);
+  const newWordsMedium = sourceWords.filter(word => word.length >= 5 && word.length <= 6);
+  const newWordsHard = sourceWords.filter(word => word.length >= 7 && word.length <= 10);
+  const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.length <= 15);
 
   // === Game State ===
   let gameState = 'start'; // 'start', 'waveStart', 'playing', 'gameOver', 'gameWon'
@@ -87,7 +125,7 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
   let isShaking = false;
   const shakeDuration = 150;
   let shakeStartTime = 0;
-  const shakeIntensity = 3;
+  const shakeIntensity = 3; // Base shake intensity
   let errorFlashActive = false;
   const errorFlashDuration = 150;
   let errorFlashStartTime = 0;
@@ -96,56 +134,60 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
   const ENEMY_HIT_FLASH_DURATION = 120;
   let spawnInterval = 2000; // Base spawn interval, updated by wave config
   let enemyIdCounter = 1;
-
   // Wave-specific state
   let enemiesToSpawnThisWave = 0;
   let enemiesSpawnedThisWave = 0;
   let enemiesDestroyedThisWave = 0;
 
+  // Define a base speed in Pixels Per Second - TUNE THIS VALUE!
+  const BASE_ENEMY_PPS = 150; // Example: Pixels per second for a medium length word on wave 1
+  // Define projectile speed in Pixels Per Second - TUNE THIS VALUE!
+  const PROJECTILE_PPS = 1200; // Example value
+
   // Configure wave parameters (Updated again for specific difficulty mix & frequency)
   function getWaveConfig(wave) {
       switch(wave) {
           case 1: return {
-              wordList: [...newWordsEasy],
-              count: 15,
-              interval: 1100,
-              speedMultiplier: 0.9
+            wordList: [...newWordsEasy],
+              count: 20,
+              interval: 800, // ms between spawns
+              speedMultiplier: 1 // Multiplies BASE_ENEMY_PPS
           };
           case 2: return {
               wordList: [...newWordsEasy, ...newWordsMedium],
-              count: 15,
-              interval: 1100,
-              speedMultiplier: 0.9
+              count: 20,
+              interval: 900,
+              speedMultiplier: 1
           };
           case 3: return {
-              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard], 
-              count: 15,
-              interval: 1100,
-              speedMultiplier: 0.8
+              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard],
+              count: 20,
+              interval: 1000,
+              speedMultiplier: 1
           };
           case 4: return {
-             
               wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard, ...newWordsVeryHard],
-              count: 15,
-              interval: 1100,
-              speedMultiplier: 0.8
-          };
-          case 5: return {
-              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard, ...newWordsVeryHard], 
               count: 20,
               interval: 1100,
-              speedMultiplier: 0.8
+              speedMultiplier: 1
           };
-          default: return { 
+          case 5: return {
+              wordList: [...newWordsEasy, ...newWordsMedium, ...newWordsHard, ...newWordsVeryHard],
+              count: 20,
+              interval: 1100,
+              speedMultiplier: 1.1
+          };
+          default: return { // Fallback/Shouldn't happen
                wordList: newWordsEasy,
                count: 5,
-               interval: 1100,
-               speedMultiplier: 0.9
+               interval: 1000,
+               speedMultiplier: 1
           };
       }
   }
   function resetGameState() {
-      enemies=[]; projectiles=[]; typed=""; score=0; lastSpawnTime=0; totalKeystrokes=0; correctKeystrokes=0; explosions=[]; lockedEnemyId=null;
+      enemies=[]; projectiles=[]; typed=""; score=0; lastSpawnTime=0; totalKeystrokes=0; correctKeystrokes=0; explosions=[];
+      lockedEnemyId=null;
       comboMeterCount=0; scoreMultiplier=1; consecutiveCombos=0; isShaking=false; errorFlashActive=false; canvas.style.borderColor=defaultBorderColor; enemyIdCounter=1; keyHistory = [];
       // Reset wave state
       currentWave = 1;
@@ -197,15 +239,39 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
           return; // Don't spawn more than planned for the wave
       }
 
-      const word=randomWord();
+      const word = randomWord();
       const config = getWaveConfig(currentWave); // Get speed multiplier
-      const rf=0.8+0.4*Math.random();
-      const bs=3 * config.speedMultiplier; // Apply speed multiplier
-      const sp=(bs/word.length)*rf; const fontSize=16; ctx.font=`${fontSize}px 'Courier New'`; const textWidth=ctx.measureText(word).width; const pixelSize=5; const invaderPatternCols=7; const enemyVisualWidth=invaderPatternCols*pixelSize; const requiredWidth=Math.max(enemyVisualWidth,textWidth);
-      const padding=10; const minX=(requiredWidth/2)+padding; const maxX=canvas.width-(requiredWidth/2)-padding; if(maxX<=minX){ console.warn(`Word "${word}" too long for screen width at wave ${currentWave}, skipping spawn.`); return; } const xPos=Math.random()*(maxX-minX)+minX;
-      enemies.push({ id:enemyIdCounter++, word, x:xPos, y:0, speed:sp, isPendingDestruction:false, isHitFlashing: false, hitFlashStartTime: 0 });
-      enemiesSpawnedThisWave++; // Track spawned enemy
+      const rf = 0.8 + 0.4 * Math.random(); // Random factor
+
+      // --- New Speed Calculation (PPS) with Min/Max Limits ---
+      // TUNE the baseline (5) or the BASE_ENEMY_PPS value
+      let enemySpeedPPS = (BASE_ENEMY_PPS * config.speedMultiplier * rf) / (word.length / 5);
+
+      // Apply Maximum Speed Limit - MAX_ENEMY_PPS defined near the top
+      enemySpeedPPS = Math.min(160, enemySpeedPPS);
+
+      // Apply Minimum Speed Limit - TUNE 20
+      enemySpeedPPS = Math.max(30, enemySpeedPPS);
+      // --- End New Speed Calculation ---
+
+      const fontSize=16; ctx.font=`${fontSize}px 'Courier New'`; const textWidth=ctx.measureText(word).width; const pixelSize=5;
+      const invaderPatternCols=7; const enemyVisualWidth=invaderPatternCols*pixelSize; const requiredWidth=Math.max(enemyVisualWidth,textWidth);
+      const padding=10; const minX=(requiredWidth/2)+padding; const maxX=canvas.width-(requiredWidth/2)-padding;
+      if(maxX<=minX){ console.warn(`Word "${word}" too long for screen width at wave ${currentWave}, skipping spawn.`); return; } const xPos=Math.random()*(maxX-minX)+minX;
+
+      enemies.push({
+          id: enemyIdCounter++,
+          word,
+          x: xPos,
+          y: 0,
+          speed: enemySpeedPPS, // Store speed in PPS
+          isPendingDestruction: false,
+          isHitFlashing: false,
+          hitFlashStartTime: 0
+      });
+      enemiesSpawnedThisWave++;
   }
+
 
   function matchedPrefixLength(word, typedInput) { let mc=0; for(let i=0; i<word.length && i<typedInput.length; i++){ if(word[i]===typedInput[i]){mc++;}else{break;} } return mc; }
 
@@ -214,14 +280,18 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
   function drawExplosions() { explosions.forEach(ex=>{ ctx.beginPath(); ctx.arc(ex.x,ex.y,ex.radius,0,Math.PI*2); ctx.fillStyle=ex.color+`${ex.alpha})`; ctx.shadowColor=ex.shadow; ctx.shadowBlur=ex.shadowBlur; ctx.fill(); ctx.shadowBlur=0; }); }
 
   // Update projectile logic to track destroyed enemies
-  function updateProjectiles(currentTime) {
+  function updateProjectiles(currentTime, dt) { // Added dt parameter
       for(let i=projectiles.length-1; i>=0; i--){
           const p=projectiles[i];
           const tE=enemies.find(e=>e.id===p.targetId);
           if(!tE){projectiles.splice(i,1); continue;} // Target gone
+
           const dx=tE.x-p.x; const dy=tE.y-p.y;
           const dist=Math.sqrt(dx*dx+dy*dy);
-          if(dist<15){ // Projectile reached target vicinity
+          const distanceToMove = PROJECTILE_PPS * dt; // How far the projectile moves this frame
+
+          // Collision check: If distance is less than movement this frame OR a small threshold
+          if(dist < distanceToMove || dist < 5) {
               if(p.type==='destroyer'){
                   createExplosion(tE.x,tE.y,'large');
                   const dId=p.targetId;
@@ -239,38 +309,43 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
                   projectiles.splice(i,1); // Remove visual projectile
                   continue; // Process next projectile
               }
-          }else{ // Projectile still travelling
+          } else { // Projectile still travelling
               const ang=Math.atan2(dy,dx);
-              const sp=8; // Projectile speed
-              p.x+=Math.cos(ang)*sp;
-              p.y+=Math.sin(ang)*sp;
+              // --- Apply Delta Timing to Projectile Movement ---
+              p.x += Math.cos(ang) * distanceToMove;
+              p.y += Math.sin(ang) * distanceToMove;
+              // --- End Delta Timing Change ---
           }
       }
   }
   function drawProjectiles() { projectiles.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle=COLOR_PROJECTILE; ctx.shadowColor=COLOR_PROJECTILE_SHADOW; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; }); }
 
   // === Update and Draw for PLAYING state ===
-  function updatePlaying(currentTime) {
-      // Update effects timers
-      if(isShaking&&(currentTime-shakeStartTime>=shakeDuration)){ isShaking=false; }
-      if(errorFlashActive&&(currentTime-errorFlashStartTime>=errorFlashDuration)){ errorFlashActive=false; canvas.style.borderColor=defaultBorderColor; }
+  function updatePlaying(currentTime, dt) { // Added dt parameter
+      // Update effects timers (using currentTime as before is likely fine)
+      if(isShaking && (performance.now()-shakeStartTime>=shakeDuration)){ isShaking=false; }
+      if(errorFlashActive && (performance.now()-errorFlashStartTime>=errorFlashDuration)){ errorFlashActive=false; canvas.style.borderColor=defaultBorderColor; }
       enemies.forEach(enemy => { if (enemy.isHitFlashing && (currentTime - enemy.hitFlashStartTime >= ENEMY_HIT_FLASH_DURATION)) { enemy.isHitFlashing = false; } });
 
-      // Spawn new enemies if needed for the wave
+      // Spawn new enemies if needed (spawn logic doesn't need dt)
       if(enemiesSpawnedThisWave < enemiesToSpawnThisWave && currentTime-lastSpawnTime>spawnInterval){
           spawnEnemy();
           lastSpawnTime=currentTime;
       }
 
-      // Update game elements
-      updateStars();
-      updateProjectiles(currentTime); // Handles enemy destruction and tracking
-      updateExplosions();
+      // Update game elements - pass dt where needed
+      updateStars(dt); // Pass dt
+      updateProjectiles(currentTime, dt); // Pass currentTime and dt
+      updateExplosions(); // Explosions are duration based, likely don't need dt
 
-      // Update enemy positions and check for game over
+      // Update enemy positions and check for game over - Use dt
       for(let i=enemies.length-1; i>=0; i--){
           const enemy=enemies[i];
-          if(!enemy.isPendingDestruction){ enemy.y+=enemy.speed; } // Only move if not being destroyed
+          if(!enemy.isPendingDestruction){
+              // --- Apply Delta Timing to Enemy Movement ---
+              enemy.y += enemy.speed * dt; // enemy.speed is now in PPS
+              // --- End Delta Timing Change ---
+          }
           // Check if enemy reached bottom
           if(enemy.y > canvas.height-20){ // Adjust Y threshold as needed
                gameState='gameOver';
@@ -278,8 +353,7 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
           }
       }
 
-      // Check for wave completion
-      // Condition: All enemies for the wave have been spawned AND all active enemies have been destroyed
+      // Check for wave completion (logic remains the same)
       if (enemiesSpawnedThisWave >= enemiesToSpawnThisWave && enemies.length === 0) {
           if (currentWave < maxWaves) {
               currentWave++;
@@ -298,10 +372,10 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
       drawExplosions();
       drawShip();
       drawHUD(); // Score and Accuracy
-      drawKeyHistory(); // Current typed input visual
+      drawKeyHistory();
+      // Current typed input visual
       drawComboMeter();
       drawMultiplier();
-
       // Draw current wave number during play
       ctx.font = "bold 18px Arial";
       ctx.fillStyle = COLOR_HUD_TEXT;
@@ -324,7 +398,8 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
       const startText = "Press SPACE to Start";
       const textY = canvas.height/2 + 20;
       // Blinking effect
-      if(Math.floor(Date.now()/500)%2===0){ ctx.fillStyle=COLOR_HUD_TEXT; } else { ctx.fillStyle = COLOR_STARS;}
+      if(Math.floor(Date.now()/500)%2===0){ ctx.fillStyle=COLOR_HUD_TEXT;
+      } else { ctx.fillStyle = COLOR_STARS;}
       ctx.fillText(startText,canvas.width/2, textY);
       ctx.textAlign='start';
   }
@@ -406,7 +481,7 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
   // === Global Input Listener ===
   // =========================================
   window.addEventListener("keydown", (e) => {
-      const keyTime = performance.now();
+      const keyTime = performance.now(); // Use performance.now() for consistency
 
       // --- Handle SPACE for state transitions ---
       if (e.code === 'Space') {
@@ -419,6 +494,8 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
           if (gameState === 'waveStart') {
               gameState = 'playing';
               lastSpawnTime = performance.now(); // Start spawning for the wave
+              // Reset lastTimestamp for dt calculation at the start of play
+              lastTimestamp = 0;
               e.preventDefault();
               return;
           }
@@ -447,7 +524,8 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
 
           totalKeystrokes++;
           const newChar = e.key.toLowerCase();
-          let projectileType='visual'; let projectileTargetId=-1;
+          let projectileType='visual';
+          let projectileTargetId=-1;
           let fireProjectile=false;
           let correctKeyPressed=false;
           let clearHistoryForNewWord = false; // Flag to control history clearing
@@ -489,14 +567,12 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
               if(lockedEnemyId===null){ // Only lock if starting fresh or lock was lost
                   const potentialString=newChar; // Start matching with the current correct key
                   const matchingEnemies=enemies.filter(enemy=>!enemy.isPendingDestruction&&enemy.word.startsWith(potentialString));
-
                   if (matchingEnemies.length > 0) {
                       let closestEnemy = null;
                       let minDistanceSq = Infinity; // Use squared distance to avoid sqrt
 
                       // Player ship position (approximate bottom-center)
                       const playerX = canvas.width / 2;
-                      // Use the 'sBY' variable value from drawShip if precise position is needed, otherwise bottom of canvas is close enough
                       const playerY = canvas.height - 30; // Reference point on the ship
 
                       matchingEnemies.forEach(enemy => {
@@ -516,7 +592,7 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
                           typed = newChar; // Start typing with the first correct char
                       } else {
                           // Fallback if something went wrong (shouldn't happen if matchingEnemies > 0)
-                          correctKeyPressed = false;
+                          correctKeyPressed = false; // Treat as incorrect
                           typed = "";
                       }
 
@@ -604,53 +680,86 @@ const newWordsVeryHard = sourceWords.filter(word => word.length >= 11 && word.le
   // =========================================
 
   // === Main Game Loop ===
-  function gameLoop(timestamp) {
-      const currentTime=performance.now();
+  let lastTimestamp = 0; // Variable to store the timestamp of the last frame
+
+  function gameLoop(currentTime) { // currentTime is provided by requestAnimationFrame
+      // Calculate delta time (time elapsed since last frame in milliseconds)
+      if (lastTimestamp === 0) {
+          lastTimestamp = currentTime; // Initialize on the first frame
+      }
+      let deltaTime = currentTime - lastTimestamp;
+      lastTimestamp = currentTime;
+
+      // Optional: Clamp delta time to prevent huge jumps if the tab loses focus
+      const maxDeltaTime = 100; // Max time step in ms (e.g., equivalent to 10 FPS)
+      // Use a smaller clamp for smoother recovery, e.g. 33ms (~30fps limit) if preferred
+      // const maxDeltaTime = 33;
+      if (deltaTime > maxDeltaTime) {
+           // console.warn(`DeltaTime clamped from ${deltaTime.toFixed(1)}ms to ${maxDeltaTime}ms`); // Optional warning
+           deltaTime = maxDeltaTime;
+      }
+
+      // Convert deltaTime to seconds (standard for physics calculations)
+      const dt = deltaTime / 1000.0;
+
+      // --- Rendering ---
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.save();
 
-      // Apply screen shake if active (only during play)
+      // Apply screen shake if active
       if(isShaking && gameState === 'playing'){
-          const elapsed=currentTime-shakeStartTime;
-          const shakeX=Math.sin(elapsed/15)*shakeIntensity;
-          const shakeY=Math.cos(elapsed/20)*shakeIntensity;
-          ctx.translate(shakeX,shakeY);
+          const elapsed = performance.now() - shakeStartTime;
+          // Check if shake duration has passed *before* calculating intensity
+          if (elapsed < shakeDuration) {
+            const shakeProgress = elapsed / shakeDuration; // 0 to 1
+            const currentIntensity = shakeIntensity * (1 - shakeProgress * shakeProgress); // Intensity decreases faster towards the end
+            const shakeX = Math.sin(elapsed / 15) * currentIntensity; // Use varying intensity
+            const shakeY = Math.cos(elapsed / 20) * currentIntensity;
+            ctx.translate(shakeX, shakeY);
+          } else {
+             isShaking = false; // Ensure shaking stops
+          }
       }
 
-      // Game state logic and drawing
+
+      // Game state logic and drawing - Pass dt where needed
       switch (gameState) {
           case 'start':
-              updateStars(); // Keep stars moving
+              updateStars(dt); // Pass dt
               drawStartScreen();
               break;
           case 'waveStart':
-              updateStars(); // Keep stars moving
+              updateStars(dt); // Pass dt
               drawWaveStartScreen();
               break;
           case 'playing':
-              updatePlaying(currentTime); // Includes updates for stars, projectiles, enemies, wave completion check
+              // Pass both currentTime (for timers) and dt (for movement)
+              updatePlaying(currentTime, dt);
               // Only draw if not game over after update
               if (gameState === 'playing') {
-                  drawPlaying(currentTime); // Draws all playing elements including wave number
+                  drawPlaying(currentTime); // Drawing doesn't usually need dt directly
               }
               break;
           case 'gameOver':
-              updateStars(); // Keep stars moving
+              updateStars(dt); // Pass dt
               drawGameOverScreen();
               break;
           case 'gameWon':
-               updateStars(); // Keep stars moving
+               updateStars(dt); // Pass dt
                drawGameWonScreen();
                break;
       }
 
       ctx.restore();
-      requestAnimationFrame(gameLoop);
+      // --- End Rendering ---
+
+      requestAnimationFrame(gameLoop); // Loop forever
   }
   // === END Main Game Loop ===
 
   // --- Initial Setup ---
   initStars();
+  // Start the loop; lastTimestamp will be set on the first frame run.
   requestAnimationFrame(gameLoop);
 
 </script>
