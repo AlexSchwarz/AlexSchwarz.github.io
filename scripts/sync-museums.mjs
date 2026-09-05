@@ -3,6 +3,19 @@ import { MUSEUMS_API, absoluteUrl, htmlToText, normalizedAddress, writeJson } fr
 const PROGRAM_API = "https://langenacht-zuerich.ch/api/longnight";
 const PROGRAM_PARAMS = "culture=de-ch&limit=1000&programNodeId=7383&skip=0";
 
+function programUrlFor(record) {
+  const url = absoluteUrl(record.detailUrl);
+  if (!url) return null;
+
+  const parsed = new URL(url);
+  if (parsed.hostname !== "langenacht-zuerich.ch" || parsed.pathname !== "/programm") return url;
+
+  parsed.search = "";
+  parsed.searchParams.set("culture", "de-ch");
+  parsed.searchParams.set("museum", String(record.id));
+  return parsed.href;
+}
+
 async function fetchJson(url, label) {
   const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`${label} API returned HTTP ${response.status}`);
@@ -51,7 +64,7 @@ const records = sourceRecords
       addressNote,
       hours: htmlToText(record.openingTimesInfoMarkup),
       transport: htmlToText(record.publicTransportDetailsMarkup).replace(/\n+/g, " · "),
-      programUrl: absoluteUrl(record.detailUrl),
+      programUrl: programUrlFor(record),
       mapsUrl: absoluteUrl(record.googleMapsUrl),
       imageUrl: absoluteUrl(record.imageUrls?.[0]),
       features: [...(record.icons ?? [])].sort(),

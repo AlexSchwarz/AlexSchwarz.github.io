@@ -24,6 +24,16 @@ for (const museum of museums) {
     }
   }
 
+  if (museum.programUrl) {
+    const programUrl = new URL(museum.programUrl);
+    if (programUrl.hostname === "langenacht-zuerich.ch" && programUrl.pathname === "/programm") {
+      const linkedMuseumId = programUrl.searchParams.get("museum");
+      if (linkedMuseumId !== String(museum.id)) {
+        errors.push(`${museum.id} ${museum.title}: programme URL targets museum ${linkedMuseumId ?? "none"}`);
+      }
+    }
+  }
+
   if (!Array.isArray(museum.program)) {
     errors.push(`${museum.id} ${museum.title}: missing programme entries`);
   }

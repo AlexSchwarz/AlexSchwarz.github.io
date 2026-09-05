@@ -988,7 +988,7 @@
     "addressNote": "Kulinarisches Angebot\ns. Landesmuseum",
     "hours": "18–02 Uhr",
     "transport": "VBZ Shuttle M3; · Bahnhofquai/HB, Landesmuseum/HB · Bus 46: Bahnhofquai/HB · Tram 17/50/51: Sihlquai/HB",
-    "programUrl": "https://langenacht-zuerich.ch/programm?limit=1000&skip=0&culture=de-ch&programNodeId=7383&museum=1145&searchTerm=einfach%20z%C3%BCrich",
+    "programUrl": "https://langenacht-zuerich.ch/programm?culture=de-ch&museum=1117",
     "mapsUrl": "https://g.page/lmzurich?share",
     "imageUrl": "https://langenacht-zuerich.ch/media/k4qd11to/einach_zuerich_ausstellung2217_vzm.jpg",
     "features": [
@@ -1462,7 +1462,7 @@
     "addressNote": null,
     "hours": "18–02 Uhr",
     "transport": "VBZ Shuttle M2; · Altes Krematorium · Tram 3, Bus 33/72/83; · Altes Krematorium",
-    "programUrl": "https://langenacht-zuerich.ch/programm?limit=1000&skip=0&culture=de-ch&programNodeId=7383&searchTerm=friedhof&languages=1&category=event-category",
+    "programUrl": "https://langenacht-zuerich.ch/programm?culture=de-ch&museum=26371",
     "mapsUrl": "https://maps.app.goo.gl/VRQmqM2r9HAhGQNm9",
     "imageUrl": "https://langenacht-zuerich.ch/media/f24lyhbh/img_2321.jpeg",
     "features": [
