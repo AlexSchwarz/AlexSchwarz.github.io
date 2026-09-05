@@ -301,7 +301,7 @@ h1 {
 }
 
 .museum-marker--group {
-  border-color: var(--lime);
+  border-color: #000;
   box-shadow: 0 0 0 2px var(--white), 0 4px 10px rgba(37, 19, 88, 0.32);
 }
 
