@@ -264,10 +264,21 @@ h1 {
 }
 
 .leaflet-popup-content {
-  width: min(340px, 68vw) !important;
-  max-height: min(520px, 72vh);
+  width: min(340px, 68vw);
+  min-width: min(280px, calc(100vw - 32px));
+  min-height: 120px;
+  max-width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
   margin: 0;
-  overflow-y: auto;
+  overflow: auto;
+  resize: both;
+  scrollbar-gutter: stable;
+}
+
+.leaflet-popup-content::-webkit-resizer {
+  background:
+    linear-gradient(135deg, transparent 0 46%, var(--pink) 47% 57%, transparent 58%),
+    linear-gradient(135deg, transparent 0 66%, var(--violet) 67% 77%, transparent 78%);
 }
 
 .leaflet-popup-tip {
