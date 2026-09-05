@@ -1,0 +1,269 @@
+{
+  "Wasserkirche": {
+    "latitude": 47.37275695800781,
+    "longitude": 8.551040649414062,
+    "label": "Zürichbergstrasse 2 <b>8032 Zürich</b>",
+    "score": 3
+  },
+  "Schifflände 30/32": {
+    "latitude": 47.36915969848633,
+    "longitude": 8.544023513793945,
+    "label": "Schifflände 30 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Rämistrasse 73": {
+    "latitude": 47.37534713745117,
+    "longitude": 8.5490083694458,
+    "label": "Rämistrasse 73 <b>8006 Zürich</b>",
+    "score": 78
+  },
+  "Höschgasse 8a": {
+    "latitude": 47.356353759765625,
+    "longitude": 8.551158905029297,
+    "label": "Höschgasse 8a <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Zollikerstrasse 107": {
+    "latitude": 47.3588752746582,
+    "longitude": 8.560038566589355,
+    "label": "Zollikerstrasse 107 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Spiegelgasse 1": {
+    "latitude": 47.37162780761719,
+    "longitude": 8.544107437133789,
+    "label": "Spiegelgasse 1 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Sihlquai 268": {
+    "latitude": 47.388710021972656,
+    "longitude": 8.528427124023438,
+    "label": "Sihlquai 268 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Museumstrasse 2 (im Landesmuseum)": null,
+  "Rämistrasse 101": {
+    "latitude": 47.37648010253906,
+    "longitude": 8.54826831817627,
+    "label": "Rämistrasse 101 <b>8006 Zürich</b>",
+    "score": 78
+  },
+  "Seestrasse 27": {
+    "latitude": 47.36330032348633,
+    "longitude": 8.53154182434082,
+    "label": "Seestrasse 27 <b>8002 Zürich</b>",
+    "score": 78
+  },
+  "Sonneggstrasse 5": {
+    "latitude": 47.37854766845703,
+    "longitude": 8.547229766845703,
+    "label": "Sonneggstrasse 5 <b>8006 Zürich</b>",
+    "score": 78
+  },
+  "Albisriederstrasse 51": {
+    "latitude": 47.375850677490234,
+    "longitude": 8.504319190979004,
+    "label": "Albisriederstrasse 51 <b>8003 Zürich</b>",
+    "score": 78
+  },
+  "Neumarkt 4": {
+    "latitude": 47.372379302978516,
+    "longitude": 8.545706748962402,
+    "label": "Neumarkt 4 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Zollikerstrasse 128": {
+    "latitude": 47.356910705566406,
+    "longitude": 8.559698104858398,
+    "label": "Zollikerstrasse 128 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Limmatquai 31": {
+    "latitude": 47.36988830566406,
+    "longitude": 8.54332160949707,
+    "label": "Limmatquai 31 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Limmatstrasse 270": {
+    "latitude": 47.38936233520508,
+    "longitude": 8.524972915649414,
+    "label": "Limmatstrasse 270 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Heimplatz 1/5": {
+    "latitude": 47.37013244628906,
+    "longitude": 8.548699378967285,
+    "label": "Heimplatz 1 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Bahnhofstrasse 9": {
+    "latitude": 47.36820602416992,
+    "longitude": 8.539586067199707,
+    "label": "Bahnhofstrasse 9 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Museumstrasse 2": {
+    "latitude": 47.379024505615234,
+    "longitude": 8.540567398071289,
+    "label": "Museumstrasse 2 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Haldenbachstrasse 14": {
+    "latitude": 47.38043212890625,
+    "longitude": 8.548599243164062,
+    "label": "Haldenbachstrasse 14 <b>8006 Zürich</b>",
+    "score": 78
+  },
+  "Seefeldstrasse 231": {
+    "latitude": 47.35148239135742,
+    "longitude": 8.561057090759277,
+    "label": "Seefeldstrasse 231 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Predigerplatz 10": {
+    "latitude": 47.373497009277344,
+    "longitude": 8.54525375366211,
+    "label": "Predigerplatz 10 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Ausstellungsstrasse 60": {
+    "latitude": 47.38286209106445,
+    "longitude": 8.53569507598877,
+    "label": "Ausstellungsstrasse 60 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Pfingstweidstrasse 96": {
+    "latitude": 47.39065933227539,
+    "longitude": 8.511383056640625,
+    "label": "Pfingstweidstrasse 96 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Limmatstrasse 268": {
+    "latitude": 47.38910675048828,
+    "longitude": 8.52546215057373,
+    "label": "Limmatstrasse 268 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Gablerstrasse 15": {
+    "latitude": 47.35899353027344,
+    "longitude": 8.53026008605957,
+    "label": "Gablerstrasse 15 <b>8002 Zürich</b>",
+    "score": 78
+  },
+  "Karl-Schmid-Str. 4": {
+    "latitude": 47.37532424926758,
+    "longitude": 8.547957420349121,
+    "label": "Karl-Schmid-Strasse 4 <b>8006 Zürich</b>",
+    "score": 78
+  },
+  "Seefeldstrasse 317": {
+    "latitude": 47.347023010253906,
+    "longitude": 8.565483093261719,
+    "label": "Seefeldstrasse 317 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Höschgasse 8": {
+    "latitude": 47.35609817504883,
+    "longitude": 8.55086612701416,
+    "label": "Höschgasse 8 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Bullingerstrasse 4": {
+    "latitude": 47.37993621826172,
+    "longitude": 8.515508651733398,
+    "label": "Bullingerstrasse 4 <b>8004 Zürich</b>",
+    "score": 78
+  },
+  "St. Peter-Hofstatt 6": {
+    "latitude": 47.37173080444336,
+    "longitude": 8.540639877319336,
+    "label": "St. Peterhofstatt 6 <b>8001 Zürich</b>",
+    "score": 38
+  },
+  "Brunngasse 8": {
+    "latitude": 47.373199462890625,
+    "longitude": 8.544517517089844,
+    "label": "Brunngasse 8 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Pfingstweidstrasse 110": {
+    "latitude": 47.391544342041016,
+    "longitude": 8.506956100463867,
+    "label": "Pfingstweidstrasse 110 <b>8005 Zürich</b>",
+    "score": 78
+  },
+  "Winterthurerstrasse 190": {
+    "latitude": 47.39695358276367,
+    "longitude": 8.54875659942627,
+    "label": "Winterthurerstrasse 190 <b>8057 Zürich</b>",
+    "score": 78
+  },
+  "Seestrasse 395": {
+    "latitude": 47.343441009521484,
+    "longitude": 8.535855293273926,
+    "label": "Seestrasse 395 <b>8038 Zürich</b>",
+    "score": 78
+  },
+  "Sackzelg 27-27/Gutstrasse": {
+    "latitude": 47.37543869018555,
+    "longitude": 8.498806953430176,
+    "label": "Sackzelg 27 <b>8047 Zürich</b>",
+    "score": 78
+  },
+  "Augustinergasse 9": {
+    "latitude": 47.371768951416016,
+    "longitude": 8.539987564086914,
+    "label": "Augustinergasse 9 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Mythenquai 88": {
+    "latitude": 47.35610580444336,
+    "longitude": 8.535024642944336,
+    "label": "Mythenquai 88 <b>8002 Zürich</b>",
+    "score": 78
+  },
+  "Forchstrasse 260": {
+    "latitude": 47.35762023925781,
+    "longitude": 8.571584701538086,
+    "label": "Forchstrasse 260 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Bahnhofstrasse 31": {
+    "latitude": 47.3709602355957,
+    "longitude": 8.538273811340332,
+    "label": "Bahnhofstrasse 31 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Eingang ausschliesslich über Uraniastrasse 9 (Hofeinfahrt)": null,
+  "Pelikanstrasse 40 im Alten Botanischen Garten UZH": null,
+  "Höschgasse 3": {
+    "latitude": 47.3564453125,
+    "longitude": 8.549993515014648,
+    "label": "Höschgasse 3 <b>8008 Zürich</b>",
+    "score": 78
+  },
+  "Zähringerplatz 6": {
+    "latitude": 47.37410354614258,
+    "longitude": 8.544920921325684,
+    "label": "Zähringerplatz 6 <b>8001 Zürich</b>",
+    "score": 78
+  },
+  "Habsburgstrasse 14": {
+    "latitude": 47.391944885253906,
+    "longitude": 8.527165412902832,
+    "label": "Habsburgstrasse 14 <b>8037 Zürich</b>",
+    "score": 78
+  },
+  "Zürichbergstrasse 221": {
+    "latitude": 47.3845100402832,
+    "longitude": 8.574721336364746,
+    "label": "Zürichbergstrasse 221 <b>8044 Zürich</b>",
+    "score": 78
+  },
+  "Obere Zäune 19": {
+    "latitude": 47.371665954589844,
+    "longitude": 8.544771194458008,
+    "label": "Obere Zäune 19 <b>8001 Zürich</b>",
+    "score": 78
+  }
+}

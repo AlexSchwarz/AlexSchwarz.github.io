@@ -1,0 +1,10 @@
+{
+  "name": "museum-map-poc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "data:sync": "node scripts/sync-museums.mjs && node scripts/geocode-museums.mjs && node scripts/validate-museums.mjs",
+    "data:validate": "node scripts/validate-museums.mjs",
+    "start": "node server.mjs"
+  }
+}

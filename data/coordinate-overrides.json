@@ -1,0 +1,70 @@
+{
+  "9015": {
+    "locations": [
+      {
+        "label": "Fraumünster",
+        "address": "Münsterhof 2, 8001 Zürich",
+        "latitude": 47.36981964111328,
+        "longitude": 8.541071891784668
+      },
+      {
+        "label": "Grossmünster",
+        "address": "Grossmünsterplatz 1, 8001 Zürich",
+        "latitude": 47.37040710449219,
+        "longitude": 8.543560028076172
+      },
+      {
+        "label": "St. Peter",
+        "address": "St. Peterhofstatt 1, 8001 Zürich",
+        "latitude": 47.3712043762207,
+        "longitude": 8.540618896484375
+      },
+      {
+        "label": "Wasserkirche",
+        "address": "Limmatquai 31, 8001 Zürich",
+        "latitude": 47.36988830566406,
+        "longitude": 8.54332160949707
+      }
+    ]
+  },
+  "1117": {
+    "locations": [
+      {
+        "label": "Einfach Zürich im Landesmuseum",
+        "address": "Museumstrasse 2, 8001 Zürich",
+        "latitude": 47.379024505615234,
+        "longitude": 8.540567398071289
+      }
+    ]
+  },
+  "1177": {
+    "locations": [
+      {
+        "label": "Lavaterhaus",
+        "address": "St. Peterhofstatt 6, 8001 Zürich",
+        "latitude": 47.37173080444336,
+        "longitude": 8.540639877319336
+      }
+    ]
+  },
+  "1197": {
+    "locations": [
+      {
+        "label": "Urania-Sternwarte Zürich",
+        "address": "Uraniastrasse 9, 8001 Zürich",
+        "latitude": 47.37432098388672,
+        "longitude": 8.539257049560547
+      }
+    ]
+  },
+  "1199": {
+    "locations": [
+      {
+        "label": "Völkerkundemuseum UZH",
+        "address": "Pelikanstrasse 40, 8001 Zürich",
+        "latitude": 47.37075424194336,
+        "longitude": 8.534380912780762
+      }
+    ]
+  }
+}
