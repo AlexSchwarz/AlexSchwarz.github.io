@@ -30,6 +30,7 @@ const detailContent = document.querySelector("#museum-detail-content");
 const markersByMuseum = new Map();
 const markerGroups = [];
 let museums = [];
+let selectedLocationGroup = null;
 const PIN_COLOR_COUNT = 7;
 
 function escapeHtml(value) {
@@ -196,6 +197,7 @@ function locationPopupContent(group) {
 
 function openDetailPanel(museum, location, group) {
   selectMuseum(museum.id);
+  setSelectedLocation(group);
   detailContent.innerHTML = detailPanelContent(museum, location, group);
   detailPanel.hidden = false;
   if (window.matchMedia("(max-width: 680px)").matches) setMuseumListVisible(false);
@@ -205,6 +207,20 @@ function closeDetailPanel() {
   detailPanel.hidden = true;
   detailContent.replaceChildren();
   selectMuseum("");
+  setSelectedLocation(null);
+}
+
+function setSelectedLocation(group) {
+  if (selectedLocationGroup?.marker) {
+    selectedLocationGroup.marker.getElement()?.classList.remove("museum-marker--selected");
+    selectedLocationGroup.marker.setZIndexOffset(0);
+  }
+
+  selectedLocationGroup = group;
+  if (selectedLocationGroup?.marker) {
+    selectedLocationGroup.marker.getElement()?.classList.add("museum-marker--selected");
+    selectedLocationGroup.marker.setZIndexOffset(1000);
+  }
 }
 
 function setMuseumListVisible(visible) {
@@ -391,7 +407,6 @@ map.getContainer().addEventListener("click", (event) => {
   );
   if (museum && entry) {
     openDetailPanel(museum, entry.location, entry.group);
-    map.closePopup();
   }
 });
 

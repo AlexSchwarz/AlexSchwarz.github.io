@@ -305,6 +305,16 @@ h1 {
   box-shadow: 0 0 0 2px var(--white), 0 4px 10px rgba(37, 19, 88, 0.32);
 }
 
+.museum-marker--selected::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border: 3px solid var(--pink);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--white);
+  pointer-events: none;
+}
+
 .pin-color-0 { --pin-color: #5a2ee6; }
 .pin-color-1 { --pin-color: #c52772; }
 .pin-color-2 { --pin-color: #087a86; }
