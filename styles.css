@@ -49,7 +49,15 @@ h1 {
   letter-spacing: -0.02em;
 }
 
-#fit-map {
+.list-controls {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+#fit-map,
+#hide-list,
+.show-list {
   flex: 0 0 auto;
   border: 1px solid var(--line);
   padding: 7px 9px;
@@ -60,8 +68,17 @@ h1 {
   font-size: 0.72rem;
 }
 
-#fit-map:hover {
+#fit-map:hover,
+#hide-list:hover,
+.show-list:hover {
   background: #f0ebff;
+}
+
+#hide-list {
+  width: 30px;
+  padding-inline: 0;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .map-frame {
@@ -90,6 +107,38 @@ h1 {
   box-shadow: var(--shadow);
   border-top: 4px solid var(--lime);
   backdrop-filter: blur(14px);
+}
+
+.show-list {
+  position: absolute;
+  z-index: 500;
+  top: 14px;
+  left: 14px;
+  padding: 9px 12px;
+  box-shadow: var(--shadow);
+}
+
+.museum-list[hidden],
+.show-list[hidden],
+.detail-panel[hidden] {
+  display: none;
+}
+
+.detail-panel {
+  position: absolute;
+  z-index: 1100;
+  top: 14px;
+  right: 14px;
+  width: min(390px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+#museum-detail-content {
+  height: 100%;
+  min-height: 0;
 }
 
 .list-heading {
@@ -271,24 +320,9 @@ h1 {
 }
 
 .leaflet-popup-content {
-  width: min(340px, 68vw);
-  min-width: min(280px, calc(100vw - 32px));
-  min-height: 120px;
-  max-width: min(680px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
+  width: min(276px, calc(100vw - 32px)) !important;
   margin: 0;
   overflow: hidden;
-  resize: both;
-}
-
-.leaflet-popup-content::-webkit-resizer {
-  background:
-    linear-gradient(135deg, transparent 0 46%, var(--pink) 47% 57%, transparent 58%),
-    linear-gradient(135deg, transparent 0 66%, var(--violet) 67% 77%, transparent 78%);
-}
-
-.leaflet-popup-content:has(.popup-program[open]) {
-  height: min(500px, calc(100vh - 48px));
 }
 
 .leaflet-popup-tip {
@@ -302,14 +336,37 @@ h1 {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  max-height: calc(100vh - 28px);
   border-top: 6px solid var(--pink);
 }
 
 .popup-top {
+  position: relative;
   flex: 0 0 auto;
   padding: 18px 20px 13px;
   background: var(--ink);
   color: var(--white);
+}
+
+.detail-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--white);
+  background: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detail-close:hover {
+  color: var(--lime);
 }
 
 .popup-kicker {
@@ -471,6 +528,11 @@ h1 {
   border-top: 1px solid var(--line);
 }
 
+.detail-panel .popup-program-list {
+  max-height: none;
+  overflow: visible;
+}
+
 .popup-program-entry {
   padding: 10px 2px 11px;
   border-bottom: 1px solid var(--line);
@@ -528,14 +590,41 @@ h1 {
   font-weight: 700;
 }
 
-.group-popup-list {
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow: auto;
+.map-popup {
+  border-top: 5px solid var(--pink);
+}
+
+.map-popup-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  color: var(--white);
+  background: var(--ink);
+}
+
+.map-popup-top > strong {
+  font-size: 0.78rem;
+}
+
+.map-popup-pin {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  background: var(--pin-color);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.map-popup-list {
   background: var(--white);
 }
 
-.group-popup-list button {
+.map-popup-list button {
   width: 100%;
   display: flex;
   align-items: center;
@@ -550,17 +639,17 @@ h1 {
   cursor: pointer;
 }
 
-.group-popup-list button:hover,
-.group-popup-list button:focus-visible {
+.map-popup-list button:hover,
+.map-popup-list button:focus-visible {
   background: #f0ebff;
 }
 
-.group-popup-list strong {
+.map-popup-list strong {
   font-size: 0.8rem;
   line-height: 1.25;
 }
 
-.group-popup-list span {
+.map-popup-list span {
   flex: 0 0 auto;
   color: var(--muted);
   font-size: 0.68rem;
@@ -582,6 +671,25 @@ h1 {
     left: 8px;
     width: auto;
     max-height: 190px;
+  }
+
+  .show-list {
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+  }
+
+  .detail-panel {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    max-height: min(72svh, 620px);
+  }
+
+  .popup-card {
+    max-height: min(72svh, 620px);
   }
 
   .list-heading {

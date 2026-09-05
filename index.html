@@ -17,13 +17,16 @@
       <section class="map-frame" aria-label="Interaktive Karte mit 52 Museen">
         <div id="map"></div>
 
-        <aside class="museum-list" aria-label="Museen im Prototyp">
+        <aside id="museum-list" class="museum-list" aria-label="Museen im Prototyp">
           <div class="list-heading">
             <div>
               <h1>Orte für heute</h1>
               <p id="location-summary">Museen werden geladen …</p>
             </div>
-            <button id="fit-map" type="button">Alle zeigen</button>
+            <div class="list-controls">
+              <button id="fit-map" type="button">Alle zeigen</button>
+              <button id="hide-list" type="button" aria-label="Museumsliste einklappen" title="Museumsliste einklappen">‹</button>
+            </div>
           </div>
           <label class="museum-search">
             <span class="visually-hidden">Museen suchen</span>
@@ -32,6 +35,14 @@
           <div id="museum-cards" aria-live="polite">
             <p class="list-status">Museen werden geladen …</p>
           </div>
+        </aside>
+
+        <button id="show-list" class="show-list" type="button" aria-controls="museum-list" aria-expanded="false" hidden>
+          Museen
+        </button>
+
+        <aside id="museum-detail" class="detail-panel" aria-label="Museumdetails" hidden>
+          <div id="museum-detail-content"></div>
         </aside>
       </section>
     </main>

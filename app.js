@@ -22,6 +22,11 @@ const cardsContainer = document.querySelector("#museum-cards");
 const searchInput = document.querySelector("#museum-search");
 const summary = document.querySelector("#location-summary");
 const fitButton = document.querySelector("#fit-map");
+const museumList = document.querySelector("#museum-list");
+const hideListButton = document.querySelector("#hide-list");
+const showListButton = document.querySelector("#show-list");
+const detailPanel = document.querySelector("#museum-detail");
+const detailContent = document.querySelector("#museum-detail-content");
 const markersByMuseum = new Map();
 const markerGroups = [];
 let museums = [];
@@ -67,10 +72,10 @@ function markerIcon(group) {
 function popupOptions() {
   const mobile = window.matchMedia("(max-width: 680px)").matches;
   return {
-    maxWidth: 360,
-    minWidth: 280,
-    autoPanPaddingTopLeft: mobile ? L.point(12, 12) : L.point(306, 14),
-    autoPanPaddingBottomRight: mobile ? L.point(12, 205) : L.point(14, 14),
+    maxWidth: 290,
+    minWidth: 230,
+    autoPanPaddingTopLeft: mobile || museumList.hidden ? L.point(12, 12) : L.point(306, 14),
+    autoPanPaddingBottomRight: L.point(12, 12),
   };
 }
 
@@ -80,7 +85,7 @@ function sharedLocationPicker(group, selectedMuseum) {
   return `
     <label class="popup-switcher">
       <span>Museum an diesem Ort</span>
-      <select data-shared-location-picker data-popup-group="${escapeHtml(group.key)}" aria-label="Museum an diesem Ort wechseln">
+      <select data-detail-location-picker data-popup-group="${escapeHtml(group.key)}" aria-label="Museum an diesem Ort wechseln">
         ${group.items
           .map(
             ({ museum }) =>
@@ -124,7 +129,7 @@ function programContent(entries = []) {
   `;
 }
 
-function popupContent(museum, location, group) {
+function detailPanelContent(museum, location, group) {
   const features = featureLabels(museum.features);
   const locationLabel =
     museum.locations.length > 1 && location.label !== museum.title
@@ -141,6 +146,7 @@ function popupContent(museum, location, group) {
   return `
     <article class="popup-card">
       <header class="popup-top">
+        <button class="detail-close" type="button" data-close-detail aria-label="Museumdetails schliessen">×</button>
         <p class="popup-kicker"><span>Lange Nacht 2026</span><span>Standort #${group?.pinNumber ?? "–"}</span></p>
         <h2>${escapeHtml(museum.title)}</h2>
         ${locationLabel}
@@ -165,18 +171,18 @@ function popupContent(museum, location, group) {
   `;
 }
 
-function groupPopupContent(group) {
+function locationPopupContent(group) {
   return `
-    <article class="popup-card group-popup">
-      <header class="popup-top">
-        <p class="popup-kicker"><span>Gemeinsamer Standort</span><span>Standort #${group.pinNumber}</span></p>
-        <h2>${group.items.length} Museen an diesem Ort</h2>
+    <article class="map-popup">
+      <header class="map-popup-top">
+        <span class="map-popup-pin pin-color-${group.colorIndex}">${group.pinNumber}</span>
+        <strong>Standort #${group.pinNumber}</strong>
       </header>
-      <div class="group-popup-list">
+      <div class="map-popup-list">
         ${group.items
           .map(
             ({ museum, location }) => `
-              <button type="button" data-popup-museum="${museum.id}" data-popup-location="${escapeHtml(location.label)}">
+              <button type="button" data-detail-museum="${museum.id}" data-detail-location="${escapeHtml(location.label)}">
                 <strong>${escapeHtml(museum.title)}</strong>
                 <span>${escapeHtml(museum.hours)}</span>
               </button>
@@ -186,6 +192,25 @@ function groupPopupContent(group) {
       </div>
     </article>
   `;
+}
+
+function openDetailPanel(museum, location, group) {
+  selectMuseum(museum.id);
+  detailContent.innerHTML = detailPanelContent(museum, location, group);
+  detailPanel.hidden = false;
+  if (window.matchMedia("(max-width: 680px)").matches) setMuseumListVisible(false);
+}
+
+function closeDetailPanel() {
+  detailPanel.hidden = true;
+  detailContent.replaceChildren();
+  selectMuseum("");
+}
+
+function setMuseumListVisible(visible) {
+  museumList.hidden = !visible;
+  showListButton.hidden = visible;
+  showListButton.setAttribute("aria-expanded", String(visible));
 }
 
 function selectMuseum(museumId) {
@@ -223,7 +248,8 @@ function openMuseum(museum) {
       duration: 0.55,
     });
   }
-  openPopupAfterMove(first.marker, popupContent(museum, first.location, first.group));
+  openDetailPanel(museum, first.location, first.group);
+  openPopupAfterMove(first.marker, locationPopupContent(first.group));
 }
 
 function createCard(museum) {
@@ -287,15 +313,15 @@ function renderMarkers(records) {
     }).addTo(markerLayer);
 
     marker.bindPopup(
-      group.items.length > 1
-        ? groupPopupContent(group)
-        : popupContent(group.items[0].museum, group.items[0].location, group),
+      locationPopupContent(group),
       popupOptions(),
     );
     marker.on("click", () => {
       selectMuseum(group.items.length === 1 ? group.items[0].museum.id : "");
     });
-    marker.on("popupclose", () => selectMuseum(""));
+    marker.on("popupclose", () => {
+      if (detailPanel.hidden) selectMuseum("");
+    });
 
     group.marker = marker;
     markerGroups.push(group);
@@ -357,32 +383,37 @@ function applySearch() {
 }
 
 map.getContainer().addEventListener("click", (event) => {
-  const button = event.target.closest("[data-popup-museum]");
+  const button = event.target.closest("[data-detail-museum]");
   if (!button) return;
-  const museum = museums.find((item) => item.id === Number(button.dataset.popupMuseum));
+  const museum = museums.find((item) => item.id === Number(button.dataset.detailMuseum));
   const entry = (markersByMuseum.get(museum?.id) ?? []).find(
-    ({ location }) => location.label === button.dataset.popupLocation,
+    ({ location }) => location.label === button.dataset.detailLocation,
   );
   if (museum && entry) {
-    selectMuseum(museum.id);
-    entry.marker.setPopupContent(popupContent(museum, entry.location, entry.group));
+    openDetailPanel(museum, entry.location, entry.group);
+    map.closePopup();
   }
 });
 
-map.getContainer().addEventListener("change", (event) => {
-  const picker = event.target.closest("[data-shared-location-picker]");
+detailPanel.addEventListener("change", (event) => {
+  const picker = event.target.closest("[data-detail-location-picker]");
   if (!picker) return;
 
   const group = markerGroups.find((item) => item.key === picker.dataset.popupGroup);
   const selected = group?.items.find(({ museum }) => museum.id === Number(picker.value));
   if (!group || !selected) return;
 
-  selectMuseum(selected.museum.id);
-  group.marker.setPopupContent(popupContent(selected.museum, selected.location, group));
+  openDetailPanel(selected.museum, selected.location, group);
+});
+
+detailPanel.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-detail]")) closeDetailPanel();
 });
 
 fitButton.addEventListener("click", fitVisibleMarkers);
 searchInput.addEventListener("input", applySearch);
+hideListButton.addEventListener("click", () => setMuseumListVisible(false));
+showListButton.addEventListener("click", () => setMuseumListVisible(true));
 
 async function loadMuseums() {
   try {
