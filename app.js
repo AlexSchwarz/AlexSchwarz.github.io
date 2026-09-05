@@ -39,34 +39,117 @@ const favoriteMuseumIds = new Set();
 const favoriteProgramIds = new Set();
 const PIN_COLOR_COUNT = 7;
 const FAVORITES_STORAGE_KEY = "lndm-map-favorites-v1";
+const FAVORITES_COOKIE_PREFIX = "lndm-map-favorites-v1";
+const FAVORITES_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const FAVORITES_COOKIE_CHUNK_SIZE = 2500;
+
+function parseFavoritePayload(value) {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || !Array.isArray(parsed.museums) || !Array.isArray(parsed.programs)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function cookieValues() {
+  return new Map(
+    document.cookie
+      .split("; ")
+      .filter(Boolean)
+      .map((cookie) => {
+        const separator = cookie.indexOf("=");
+        return separator === -1
+          ? [cookie, ""]
+          : [cookie.slice(0, separator), cookie.slice(separator + 1)];
+      }),
+  );
+}
+
+function favoriteCookieAttributes(maxAge = FAVORITES_COOKIE_MAX_AGE) {
+  return `Max-Age=${maxAge}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+}
+
+function readFavoritesCookie() {
+  const cookies = cookieValues();
+  const chunkCount = Number(cookies.get(`${FAVORITES_COOKIE_PREFIX}-count`) ?? 0);
+  if (!Number.isInteger(chunkCount) || chunkCount < 1 || chunkCount > 20) return null;
+
+  let encoded = "";
+  for (let index = 0; index < chunkCount; index += 1) {
+    const chunk = cookies.get(`${FAVORITES_COOKIE_PREFIX}-${index}`);
+    if (chunk === undefined) return null;
+    encoded += chunk;
+  }
+
+  try {
+    return parseFavoritePayload(decodeURIComponent(encoded));
+  } catch {
+    return null;
+  }
+}
+
+function writeFavoritesCookie(payload) {
+  const cookies = cookieValues();
+  const previousCount = Number(cookies.get(`${FAVORITES_COOKIE_PREFIX}-count`) ?? 0);
+  const encoded = encodeURIComponent(payload);
+  const chunks = [];
+  for (let offset = 0; offset < encoded.length; offset += FAVORITES_COOKIE_CHUNK_SIZE) {
+    chunks.push(encoded.slice(offset, offset + FAVORITES_COOKIE_CHUNK_SIZE));
+  }
+
+  chunks.forEach((chunk, index) => {
+    document.cookie = `${FAVORITES_COOKIE_PREFIX}-${index}=${chunk}; ${favoriteCookieAttributes()}`;
+  });
+  document.cookie = `${FAVORITES_COOKIE_PREFIX}-count=${chunks.length}; ${favoriteCookieAttributes()}`;
+
+  for (let index = chunks.length; index < previousCount; index += 1) {
+    document.cookie = `${FAVORITES_COOKIE_PREFIX}-${index}=; ${favoriteCookieAttributes(0)}`;
+  }
+}
 
 function loadFavorites() {
   try {
-    const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) ?? "{}");
+    const localSaved = parseFavoritePayload(localStorage.getItem(FAVORITES_STORAGE_KEY));
+    const cookieSaved = readFavoritesCookie();
+    const saved = [localSaved, cookieSaved]
+      .filter(Boolean)
+      .sort((left, right) => Number(right.updatedAt ?? 0) - Number(left.updatedAt ?? 0))[0];
+
     favoriteMuseumIds.clear();
     favoriteProgramIds.clear();
-    for (const id of saved.museums ?? []) favoriteMuseumIds.add(Number(id));
-    for (const id of saved.programs ?? []) favoriteProgramIds.add(Number(id));
+    for (const id of saved?.museums ?? []) favoriteMuseumIds.add(Number(id));
+    for (const id of saved?.programs ?? []) favoriteProgramIds.add(Number(id));
   } catch (error) {
     console.warn("Could not read saved favourites", error);
   }
 }
 
 function saveFavorites() {
+  const payload = JSON.stringify({
+    updatedAt: Date.now(),
+    museums: [...favoriteMuseumIds],
+    programs: [...favoriteProgramIds],
+  });
+
   try {
-    localStorage.setItem(
-      FAVORITES_STORAGE_KEY,
-      JSON.stringify({
-        museums: [...favoriteMuseumIds],
-        programs: [...favoriteProgramIds],
-      }),
-    );
+    localStorage.setItem(FAVORITES_STORAGE_KEY, payload);
   } catch (error) {
-    console.warn("Could not save favourites", error);
+    console.warn("Could not save favourites to local storage", error);
+  }
+
+  try {
+    writeFavoritesCookie(payload);
+  } catch (error) {
+    console.warn("Could not save favourites to cookies", error);
   }
 }
 
 loadFavorites();
+saveFavorites();
 
 function escapeHtml(value) {
   return String(value ?? "")
