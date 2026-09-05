@@ -25,6 +25,7 @@ const fitButton = document.querySelector("#fit-map");
 const markersByMuseum = new Map();
 const markerGroups = [];
 let museums = [];
+const PIN_COLOR_COUNT = 7;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -43,11 +44,20 @@ function featureLabels(features) {
   return features.map((feature) => labels[feature]).filter(Boolean);
 }
 
-function markerIcon(count) {
-  const grouped = count > 1;
+function pinColorIndex(key) {
+  let hash = 2166136261;
+  for (const character of key) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % PIN_COLOR_COUNT;
+}
+
+function markerIcon(group) {
+  const grouped = group.items.length > 1;
   return L.divIcon({
-    className: `museum-marker${grouped ? " museum-marker--group" : ""}`,
-    html: "<span></span>",
+    className: `museum-marker pin-color-${group.colorIndex}${grouped ? " museum-marker--group" : ""}`,
+    html: `<span>${group.pinNumber}</span>`,
     iconSize: [29, 29],
     iconAnchor: [15, 15],
     popupAnchor: [0, -18],
@@ -131,7 +141,7 @@ function popupContent(museum, location, group) {
   return `
     <article class="popup-card">
       <header class="popup-top">
-        <p class="popup-kicker">Lange Nacht 2026</p>
+        <p class="popup-kicker"><span>Lange Nacht 2026</span><span>Standort #${group?.pinNumber ?? "–"}</span></p>
         <h2>${escapeHtml(museum.title)}</h2>
         ${locationLabel}
         ${sharedLocationPicker(group, museum)}
@@ -159,7 +169,7 @@ function groupPopupContent(group) {
   return `
     <article class="popup-card group-popup">
       <header class="popup-top">
-        <p class="popup-kicker">Gemeinsamer Standort</p>
+        <p class="popup-kicker"><span>Gemeinsamer Standort</span><span>Standort #${group.pinNumber}</span></p>
         <h2>${group.items.length} Museen an diesem Ort</h2>
       </header>
       <div class="group-popup-list">
@@ -217,6 +227,9 @@ function openMuseum(museum) {
 }
 
 function createCard(museum) {
+  const groups = [...new Map(
+    (markersByMuseum.get(museum.id) ?? []).map(({ group }) => [group.key, group]),
+  ).values()];
   const card = document.createElement("button");
   card.type = "button";
   card.className = "museum-card";
@@ -225,7 +238,9 @@ function createCard(museum) {
   card.setAttribute("aria-current", "false");
   card.setAttribute("aria-label", `${museum.title} auf der Karte öffnen`);
   card.innerHTML = `
-    <span class="card-dot" aria-hidden="true"></span>
+    <span class="card-pins" aria-hidden="true">
+      ${groups.map((group) => `<span class="card-pin pin-color-${group.colorIndex}">${group.pinNumber}</span>`).join("")}
+    </span>
     <span class="card-copy">
       <strong>${escapeHtml(museum.title)}</strong>
       <span>${escapeHtml(museum.address)} · ${escapeHtml(museum.hours)}</span>
@@ -255,20 +270,26 @@ function groupLocations(records) {
 }
 
 function renderMarkers(records) {
-  for (const group of groupLocations(records)) {
+  const groups = groupLocations(records);
+  groups.forEach((group, index) => {
+    group.pinNumber = index + 1;
+    group.colorIndex = pinColorIndex(group.key);
+  });
+
+  for (const group of groups) {
     const label =
       group.items.length > 1
-        ? `${group.items.length} Museen: ${group.items.map(({ museum }) => museum.title).join(", ")}`
-        : group.items[0].museum.title;
+        ? `Standort ${group.pinNumber}, ${group.items.length} Museen: ${group.items.map(({ museum }) => museum.title).join(", ")}`
+        : `Standort ${group.pinNumber}: ${group.items[0].museum.title}`;
     const marker = L.marker([group.latitude, group.longitude], {
-      icon: markerIcon(group.items.length),
+      icon: markerIcon(group),
       title: label,
     }).addTo(markerLayer);
 
     marker.bindPopup(
       group.items.length > 1
         ? groupPopupContent(group)
-        : popupContent(group.items[0].museum, group.items[0].location),
+        : popupContent(group.items[0].museum, group.items[0].location, group),
       popupOptions(),
     );
     marker.on("click", () => {
@@ -323,10 +344,9 @@ function applySearch() {
     if (!visible && markerLayer.hasLayer(group.marker)) markerLayer.removeLayer(group.marker);
   }
 
-  const totalLocations = museums.reduce((count, museum) => count + museum.locations.length, 0);
   summary.textContent = query
     ? `${visibleCount} von ${museums.length} Museen`
-    : `${museums.length} Museen · ${totalLocations} Orte`;
+    : `${museums.length} Museen · ${markerGroups.length} Standorte`;
   cardsContainer.querySelector(".list-status--empty")?.remove();
   if (visibleCount === 0) {
     const empty = document.createElement("p");

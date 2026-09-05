@@ -168,7 +168,7 @@ h1 {
 .museum-card {
   width: 100%;
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 38px 1fr auto;
   gap: 9px;
   align-items: center;
   padding: 9px 12px;
@@ -189,18 +189,30 @@ h1 {
   background: #f0ebff;
 }
 
-.card-dot {
-  width: 11px;
-  height: 11px;
-  justify-self: center;
-  background: var(--violet);
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px #eee9ff;
+.card-pins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
 }
 
-.museum-card[aria-current="true"] .card-dot {
-  background: var(--lime);
-  box-shadow: 0 0 0 3px var(--violet);
+.card-pin {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  background: var(--pin-color);
+  border: 1px solid var(--white);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #ded6f7;
+  font-size: 0.5rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.museum-card[aria-current="true"] .card-pin {
+  box-shadow: 0 0 0 2px var(--lime);
 }
 
 .card-copy strong,
@@ -230,32 +242,27 @@ h1 {
   display: grid !important;
   place-items: center;
   color: var(--white);
-  background: var(--violet);
+  background: var(--pin-color);
   border: 3px solid var(--white);
   border-radius: 50%;
   box-shadow: 0 4px 10px rgba(37, 19, 88, 0.32);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 850;
-}
-
-.museum-marker > span:empty {
-  width: 7px;
-  height: 7px;
-  display: block;
-  background: var(--lime);
-  border-radius: 50%;
+  line-height: 1;
 }
 
 .museum-marker--group {
-  color: var(--ink);
-  background: var(--lime);
-  font-size: 0.7rem;
+  border-color: var(--lime);
+  box-shadow: 0 0 0 2px var(--white), 0 4px 10px rgba(37, 19, 88, 0.32);
 }
 
-.museum-marker--group > span:empty {
-  background: var(--violet);
-  box-shadow: 0 0 0 2px var(--white);
-}
+.pin-color-0 { --pin-color: #5a2ee6; }
+.pin-color-1 { --pin-color: #c52772; }
+.pin-color-2 { --pin-color: #087a86; }
+.pin-color-3 { --pin-color: #c94e00; }
+.pin-color-4 { --pin-color: #2463bd; }
+.pin-color-5 { --pin-color: #773b99; }
+.pin-color-6 { --pin-color: #347836; }
 
 .leaflet-popup-content-wrapper {
   border-radius: 0;
@@ -296,7 +303,10 @@ h1 {
 }
 
 .popup-kicker {
-  margin: 0 0 5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 24px 5px 0;
   color: var(--lime);
   font-size: 0.75rem;
   font-weight: 800;
