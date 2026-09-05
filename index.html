@@ -28,10 +28,17 @@
               <button id="hide-list" type="button" aria-label="Museumsliste einklappen" title="Museumsliste einklappen">‹</button>
             </div>
           </div>
-          <label class="museum-search">
-            <span class="visually-hidden">Museen suchen</span>
-            <input id="museum-search" type="search" placeholder="Museum suchen" autocomplete="off" />
-          </label>
+          <div class="museum-tools">
+            <label class="museum-search">
+              <span class="visually-hidden">Museen suchen</span>
+              <input id="museum-search" type="search" placeholder="Museum suchen" autocomplete="off" />
+            </label>
+            <button id="favorites-filter" type="button" aria-pressed="false" aria-label="Nur Favoriten zeigen">
+              <span class="favorites-filter-heart" aria-hidden="true">♥</span>
+              <span>Favoriten</span>
+              <span id="favorites-count" aria-hidden="true">0</span>
+            </button>
+          </div>
           <div id="museum-cards" aria-live="polite">
             <p class="list-status">Museen werden geladen …</p>
           </div>

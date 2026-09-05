@@ -20,6 +20,8 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const markerLayer = L.featureGroup().addTo(map);
 const cardsContainer = document.querySelector("#museum-cards");
 const searchInput = document.querySelector("#museum-search");
+const favoritesFilter = document.querySelector("#favorites-filter");
+const favoritesCount = document.querySelector("#favorites-count");
 const summary = document.querySelector("#location-summary");
 const fitButton = document.querySelector("#fit-map");
 const museumList = document.querySelector("#museum-list");
@@ -31,7 +33,40 @@ const markersByMuseum = new Map();
 const markerGroups = [];
 let museums = [];
 let selectedLocationGroup = null;
+let activeMuseumId = null;
+let favoritesOnly = false;
+const favoriteMuseumIds = new Set();
+const favoriteProgramIds = new Set();
 const PIN_COLOR_COUNT = 7;
+const FAVORITES_STORAGE_KEY = "lndm-map-favorites-v1";
+
+function loadFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) ?? "{}");
+    favoriteMuseumIds.clear();
+    favoriteProgramIds.clear();
+    for (const id of saved.museums ?? []) favoriteMuseumIds.add(Number(id));
+    for (const id of saved.programs ?? []) favoriteProgramIds.add(Number(id));
+  } catch (error) {
+    console.warn("Could not read saved favourites", error);
+  }
+}
+
+function saveFavorites() {
+  try {
+    localStorage.setItem(
+      FAVORITES_STORAGE_KEY,
+      JSON.stringify({
+        museums: [...favoriteMuseumIds],
+        programs: [...favoriteProgramIds],
+      }),
+    );
+  } catch (error) {
+    console.warn("Could not save favourites", error);
+  }
+}
+
+loadFavorites();
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -61,8 +96,9 @@ function pinColorIndex(key) {
 
 function markerIcon(group) {
   const grouped = group.items.length > 1;
+  const favorite = group.items.some(({ museum }) => favoriteMuseumIds.has(museum.id));
   return L.divIcon({
-    className: `museum-marker pin-color-${group.colorIndex}${grouped ? " museum-marker--group" : ""}`,
+    className: `museum-marker pin-color-${group.colorIndex}${grouped ? " museum-marker--group" : ""}${favorite ? " museum-marker--favorite" : ""}`,
     html: `<span>${group.pinNumber}</span>`,
     iconSize: [29, 29],
     iconAnchor: [15, 15],
@@ -115,23 +151,67 @@ function sharedLocationPicker(group, selectedMuseum) {
   `;
 }
 
-function programContent(entries = []) {
+function favoriteProgramCount(museum) {
+  return museum.program.filter((entry) => favoriteProgramIds.has(entry.id)).length;
+}
+
+function museumFavoriteButton(museum, className) {
+  const active = favoriteMuseumIds.has(museum.id);
+  const programCount = favoriteProgramCount(museum);
+  const action = active ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen";
+  const reason = programCount
+    ? programCount === 1
+      ? ", 1 gemerkter Programmpunkt"
+      : `, ${programCount} gemerkte Programmpunkte`
+    : "";
+
+  return `
+    <button
+      class="favorite-button ${className}"
+      type="button"
+      data-favorite-museum="${museum.id}"
+      data-favorite-label="${escapeHtml(museum.title)}"
+      aria-pressed="${active}"
+      aria-label="${action}: ${escapeHtml(museum.title)}${reason}"
+      title="${action}"
+    >
+      <span class="favorite-heart" aria-hidden="true">${active ? "♥" : "♡"}</span>
+      <span class="favorite-reason-count" aria-hidden="true">${programCount || ""}</span>
+    </button>
+  `;
+}
+
+function programContent(entries = [], museumId) {
   const countLabel = entries.length === 1 ? "1 Eintrag" : `${entries.length} Einträge`;
   const list = entries.length
     ? `<div class="popup-program-list">
         ${entries
-          .map(
-            (entry) => `
-              <article class="popup-program-entry">
-                <div class="popup-program-meta">
-                  <span>${escapeHtml(entry.time || "Ganzer Abend")}</span>
-                  <span>${escapeHtml(entry.category)}</span>
+          .map((entry) => {
+            const active = favoriteProgramIds.has(entry.id);
+            const action = active ? "Programmpunkt aus Favoriten entfernen" : "Programmpunkt merken";
+            return `
+              <article class="popup-program-entry${active ? " popup-program-entry--favorite" : ""}" data-program-entry="${entry.id}">
+                <div class="popup-program-entry-head">
+                  <div class="popup-program-meta">
+                    <span>${escapeHtml(entry.time || "Ganzer Abend")}</span>
+                    <span>${escapeHtml(entry.category)}</span>
+                  </div>
+                  <button
+                    class="favorite-button program-favorite"
+                    type="button"
+                    data-favorite-program="${entry.id}"
+                    data-program-museum="${museumId}"
+                    data-favorite-label="${escapeHtml(`${entry.title}, ${entry.time || "Ganzer Abend"}`)}"
+                    aria-pressed="${active}"
+                    aria-label="${action}: ${escapeHtml(entry.title)}, ${escapeHtml(entry.time || "Ganzer Abend")}"
+                    title="${action}"
+                  ><span class="favorite-heart" aria-hidden="true">${active ? "♥" : "♡"}</span></button>
                 </div>
                 <h3>${escapeHtml(entry.title)}</h3>
                 ${entry.description ? `<p>${escapeHtml(entry.description)}</p>` : ""}
               </article>
-            `,
-          )
+            `;
+          })
           .join("")}
       </div>`
     : '<p class="popup-program-empty">Für dieses Museum sind keine Programmeinträge verfügbar.</p>';
@@ -166,7 +246,10 @@ function detailPanelContent(museum, location, group) {
       <header class="popup-top">
         <button class="detail-close" type="button" data-close-detail aria-label="Museumdetails schliessen">×</button>
         <p class="popup-kicker"><span>Lange Nacht 2026</span><span>Standort #${group?.pinNumber ?? "–"}</span></p>
-        <h2>${escapeHtml(museum.title)}</h2>
+        <div class="popup-title-row">
+          <h2>${escapeHtml(museum.title)}</h2>
+          ${museumFavoriteButton(museum, "detail-favorite")}
+        </div>
         ${locationLabel}
         ${sharedLocationPicker(group, museum)}
       </header>
@@ -179,7 +262,7 @@ function detailPanelContent(museum, location, group) {
         </dl>
         ${note}
         ${chips}
-        ${programContent(museum.program)}
+        ${programContent(museum.program, museum.id)}
         <div class="popup-actions">
           <a class="popup-link" href="${escapeHtml(museum.programUrl)}" target="_blank" rel="noreferrer">Programm öffnen</a>
           <a class="popup-link popup-link--secondary" href="${escapeHtml(museum.mapsUrl)}" target="_blank" rel="noreferrer">Route</a>
@@ -201,7 +284,7 @@ function locationPopupContent(group) {
           .map(
             ({ museum, location }) => `
               <button type="button" data-detail-museum="${museum.id}" data-detail-location="${escapeHtml(location.label)}">
-                <strong>${escapeHtml(museum.title)}</strong>
+                <strong>${favoriteMuseumIds.has(museum.id) ? '<span class="map-popup-favorite" aria-hidden="true">♥</span>' : ""}${escapeHtml(museum.title)}</strong>
                 <span>${escapeHtml(museum.hours)}</span>
               </button>
             `,
@@ -213,6 +296,7 @@ function locationPopupContent(group) {
 }
 
 function openDetailPanel(museum, location, group) {
+  activeMuseumId = museum.id;
   selectMuseum(museum.id);
   setSelectedLocation(group);
   detailContent.innerHTML = detailPanelContent(museum, location, group);
@@ -222,6 +306,7 @@ function openDetailPanel(museum, location, group) {
 }
 
 function closeDetailPanel() {
+  activeMuseumId = null;
   detailPanel.hidden = true;
   detailContent.replaceChildren();
   selectMuseum("");
@@ -239,6 +324,94 @@ function setSelectedLocation(group) {
     selectedLocationGroup.marker.getElement()?.classList.add("museum-marker--selected");
     selectedLocationGroup.marker.setZIndexOffset(1000);
   }
+}
+
+function updateFavoriteButton(button, active, programCount = 0) {
+  const label = button.dataset.favoriteLabel;
+  const isProgram = button.matches("[data-favorite-program]");
+  const action = isProgram
+    ? active
+      ? "Programmpunkt aus Favoriten entfernen"
+      : "Programmpunkt merken"
+    : active
+      ? "Aus Favoriten entfernen"
+      : "Zu Favoriten hinzufügen";
+  const reason = !isProgram && programCount
+    ? programCount === 1
+      ? ", 1 gemerkter Programmpunkt"
+      : `, ${programCount} gemerkte Programmpunkte`
+    : "";
+
+  button.setAttribute("aria-pressed", String(active));
+  button.setAttribute("aria-label", `${action}: ${label}${reason}`);
+  button.title = action;
+  button.querySelector(".favorite-heart").textContent = active ? "♥" : "♡";
+  const count = button.querySelector(".favorite-reason-count");
+  if (count) count.textContent = programCount || "";
+}
+
+function updateFavoriteInterface() {
+  document.querySelectorAll("[data-favorite-museum]").forEach((button) => {
+    const museum = museums.find((item) => item.id === Number(button.dataset.favoriteMuseum));
+    if (!museum) return;
+    updateFavoriteButton(button, favoriteMuseumIds.has(museum.id), favoriteProgramCount(museum));
+  });
+
+  document.querySelectorAll("[data-favorite-program]").forEach((button) => {
+    const active = favoriteProgramIds.has(Number(button.dataset.favoriteProgram));
+    updateFavoriteButton(button, active);
+    button.closest("[data-program-entry]")?.classList.toggle("popup-program-entry--favorite", active);
+  });
+
+  document.querySelectorAll(".museum-card").forEach((card) => {
+    card.classList.toggle("museum-card--favorite", favoriteMuseumIds.has(Number(card.dataset.museumId)));
+  });
+
+  favoritesCount.textContent = String(favoriteMuseumIds.size);
+  favoritesFilter.setAttribute("aria-pressed", String(favoritesOnly));
+  favoritesFilter.setAttribute(
+    "aria-label",
+    `${favoritesOnly ? "Alle Museen zeigen" : "Nur Favoriten zeigen"}, ${favoriteMuseumIds.size} gespeichert`,
+  );
+
+  for (const group of markerGroups) {
+    group.marker.setIcon(markerIcon(group));
+    group.marker.getElement()?.setAttribute("aria-label", group.accessibleLabel);
+    group.marker.setPopupContent(locationPopupContent(group));
+    if (selectedLocationGroup === group) {
+      group.marker.getElement()?.classList.add("museum-marker--selected");
+    }
+  }
+
+  if (museums.length) applySearch();
+  if (favoritesOnly && activeMuseumId && !favoriteMuseumIds.has(activeMuseumId)) closeDetailPanel();
+}
+
+function toggleMuseumFavorite(museumId) {
+  const museum = museums.find((item) => item.id === museumId);
+  if (!museum) return;
+
+  if (favoriteMuseumIds.has(museumId)) {
+    favoriteMuseumIds.delete(museumId);
+    for (const entry of museum.program) favoriteProgramIds.delete(entry.id);
+  } else {
+    favoriteMuseumIds.add(museumId);
+  }
+
+  saveFavorites();
+  updateFavoriteInterface();
+}
+
+function toggleProgramFavorite(programId, museumId) {
+  if (favoriteProgramIds.has(programId)) {
+    favoriteProgramIds.delete(programId);
+  } else {
+    favoriteProgramIds.add(programId);
+    favoriteMuseumIds.add(museumId);
+  }
+
+  saveFavorites();
+  updateFavoriteInterface();
 }
 
 function setMuseumListVisible(visible) {
@@ -290,24 +463,26 @@ function createCard(museum) {
   const groups = [...new Map(
     (markersByMuseum.get(museum.id) ?? []).map(({ group }) => [group.key, group]),
   ).values()];
-  const card = document.createElement("button");
-  card.type = "button";
+  const card = document.createElement("article");
   card.className = "museum-card";
   card.dataset.museumId = String(museum.id);
   card.dataset.searchText = `${museum.title} ${museum.address}`.toLocaleLowerCase("de");
   card.setAttribute("aria-current", "false");
-  card.setAttribute("aria-label", `${museum.title} auf der Karte öffnen`);
   card.innerHTML = `
-    <span class="card-pins" aria-hidden="true">
-      ${groups.map((group) => `<span class="card-pin pin-color-${group.colorIndex}">${group.pinNumber}</span>`).join("")}
-    </span>
-    <span class="card-copy">
-      <strong>${escapeHtml(museum.title)}</strong>
-      <span>${escapeHtml(museum.address)} · ${escapeHtml(museum.hours)}</span>
-    </span>
-    <span class="card-arrow" aria-hidden="true">›</span>
+    <button class="museum-card-main" type="button" aria-label="${escapeHtml(museum.title)} auf der Karte öffnen">
+      <span class="card-pins" aria-hidden="true">
+        ${groups.map((group) => `<span class="card-pin pin-color-${group.colorIndex}">${group.pinNumber}</span>`).join("")}
+      </span>
+      <span class="card-copy">
+        <strong>${escapeHtml(museum.title)}</strong>
+        <span>${escapeHtml(museum.address)} · ${escapeHtml(museum.hours)}</span>
+      </span>
+      <span class="card-arrow" aria-hidden="true">›</span>
+    </button>
+    ${museumFavoriteButton(museum, "card-favorite")}
   `;
-  card.addEventListener("click", () => openMuseum(museum));
+  card.querySelector(".museum-card-main").addEventListener("click", () => openMuseum(museum));
+  card.querySelector("[data-favorite-museum]").addEventListener("click", () => toggleMuseumFavorite(museum.id));
   return card;
 }
 
@@ -341,10 +516,12 @@ function renderMarkers(records) {
       group.items.length > 1
         ? `Standort ${group.pinNumber}, ${group.items.length} Museen: ${group.items.map(({ museum }) => museum.title).join(", ")}`
         : `Standort ${group.pinNumber}: ${group.items[0].museum.title}`;
+    group.accessibleLabel = label;
     const marker = L.marker([group.latitude, group.longitude], {
       icon: markerIcon(group),
       title: label,
     }).addTo(markerLayer);
+    marker.getElement()?.setAttribute("aria-label", label);
 
     marker.bindPopup(
       locationPopupContent(group),
@@ -390,11 +567,14 @@ function applySearch() {
   let visibleCount = 0;
 
   document.querySelectorAll(".museum-card").forEach((card) => {
-    const visible = !query || card.dataset.searchText.includes(query);
+    const museumId = Number(card.dataset.museumId);
+    const matchesSearch = !query || card.dataset.searchText.includes(query);
+    const matchesFavorites = !favoritesOnly || favoriteMuseumIds.has(museumId);
+    const visible = matchesSearch && matchesFavorites;
     card.hidden = !visible;
     if (visible) {
       visibleCount += 1;
-      visibleMuseumIds.add(Number(card.dataset.museumId));
+      visibleMuseumIds.add(museumId);
     }
   });
 
@@ -404,14 +584,20 @@ function applySearch() {
     if (!visible && markerLayer.hasLayer(group.marker)) markerLayer.removeLayer(group.marker);
   }
 
-  summary.textContent = query
-    ? `${visibleCount} von ${museums.length} Museen`
-    : `${museums.length} Museen · ${markerGroups.length} Standorte`;
+  summary.textContent = favoritesOnly
+    ? `${visibleCount} von ${favoriteMuseumIds.size} Favoriten`
+    : query
+      ? `${visibleCount} von ${museums.length} Museen`
+      : `${museums.length} Museen · ${markerGroups.length} Standorte`;
   cardsContainer.querySelector(".list-status--empty")?.remove();
   if (visibleCount === 0) {
     const empty = document.createElement("p");
     empty.className = "list-status list-status--empty";
-    empty.textContent = "Kein Museum gefunden.";
+    empty.textContent = favoritesOnly
+      ? favoriteMuseumIds.size
+        ? "Keine passenden Favoriten gefunden."
+        : "Noch keine Favoriten gespeichert."
+      : "Kein Museum gefunden.";
     cardsContainer.appendChild(empty);
   }
 }
@@ -440,11 +626,30 @@ detailPanel.addEventListener("change", (event) => {
 });
 
 detailPanel.addEventListener("click", (event) => {
+  const programButton = event.target.closest("[data-favorite-program]");
+  if (programButton) {
+    toggleProgramFavorite(
+      Number(programButton.dataset.favoriteProgram),
+      Number(programButton.dataset.programMuseum),
+    );
+    return;
+  }
+
+  const museumButton = event.target.closest("[data-favorite-museum]");
+  if (museumButton) {
+    toggleMuseumFavorite(Number(museumButton.dataset.favoriteMuseum));
+    return;
+  }
+
   if (event.target.closest("[data-close-detail]")) closeDetailPanel();
 });
 
 fitButton.addEventListener("click", fitVisibleMarkers);
 searchInput.addEventListener("input", applySearch);
+favoritesFilter.addEventListener("click", () => {
+  favoritesOnly = !favoritesOnly;
+  updateFavoriteInterface();
+});
 hideListButton.addEventListener("click", () => setMuseumListVisible(false));
 showListButton.addEventListener("click", () => setMuseumListVisible(true));
 
@@ -474,7 +679,7 @@ async function loadMuseums() {
 
     renderMarkers(museums);
     renderCards(museums);
-    applySearch();
+    updateFavoriteInterface();
     fitVisibleMarkers();
   } catch (error) {
     console.error("Could not load museum data", error);

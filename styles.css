@@ -160,11 +160,18 @@ h1 {
   line-height: 1.2;
 }
 
-.museum-search {
-  display: block;
+.museum-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 10px;
   background: var(--white);
   border-bottom: 1px solid var(--line);
+}
+
+.museum-search {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .museum-search input {
@@ -182,6 +189,49 @@ h1 {
 .museum-search input:focus {
   border-color: var(--violet);
   outline: 2px solid rgba(90, 46, 230, 0.16);
+}
+
+#favorites-filter {
+  min-height: 32px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  color: var(--violet-dark);
+  background: #f5f2fb;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+#favorites-filter:hover {
+  background: #eee9ff;
+}
+
+#favorites-filter[aria-pressed="true"] {
+  color: var(--white);
+  background: var(--violet-dark);
+}
+
+.favorites-filter-heart {
+  color: var(--pink);
+  font-size: 0.86rem;
+}
+
+#favorites-filter[aria-pressed="true"] .favorites-filter-heart {
+  color: var(--white);
+}
+
+#favorites-count {
+  min-width: 15px;
+  padding: 1px 4px;
+  color: var(--white);
+  background: var(--pink);
+  border-radius: 999px;
+  text-align: center;
+  line-height: 1.25;
 }
 
 #museum-cards {
@@ -219,16 +269,10 @@ h1 {
 .museum-card {
   width: 100%;
   display: grid;
-  grid-template-columns: 38px 1fr auto;
-  gap: 9px;
-  align-items: center;
-  padding: 9px 12px;
-  text-align: left;
+  grid-template-columns: minmax(0, 1fr) 38px;
   color: var(--ink);
   background: transparent;
-  border: 0;
   border-bottom: 1px solid var(--line);
-  cursor: pointer;
 }
 
 .museum-card[hidden] {
@@ -238,6 +282,76 @@ h1 {
 .museum-card:hover,
 .museum-card[aria-current="true"] {
   background: #f0ebff;
+}
+
+.museum-card--favorite {
+  box-shadow: inset 3px 0 0 var(--pink);
+}
+
+.museum-card-main {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 9px 6px 9px 12px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 7px;
+  color: var(--pink);
+  background: var(--white);
+  border: 1px solid rgba(197, 39, 114, 0.24);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.favorite-button:hover {
+  background: #fff0f7;
+}
+
+.favorite-button[aria-pressed="true"] {
+  color: var(--white);
+  background: var(--pink);
+  border-color: var(--pink);
+}
+
+.favorite-heart {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.favorite-reason-count {
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.card-favorite {
+  align-self: stretch;
+  width: 38px;
+  height: auto;
+  min-height: 38px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line);
+}
+
+.card-favorite[aria-pressed="true"] {
+  color: var(--pink);
+  background: #fff0f7;
+  border-color: var(--line);
 }
 
 .card-pins {
@@ -305,6 +419,25 @@ h1 {
 .museum-marker--group {
   border-color: #000;
   box-shadow: 0 0 0 2px var(--white), 0 4px 10px rgba(37, 19, 88, 0.32);
+}
+
+.museum-marker--favorite::before {
+  content: "♥";
+  position: absolute;
+  z-index: 1;
+  top: -9px;
+  right: -9px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--pink);
+  background: var(--white);
+  border: 1px solid var(--pink);
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(37, 19, 88, 0.28);
+  font-size: 0.58rem;
+  line-height: 1;
 }
 
 .museum-marker--selected::after {
@@ -395,6 +528,30 @@ h1 {
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.12;
+}
+
+.popup-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-right: 44px;
+}
+
+.popup-title-row h2 {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.detail-favorite {
+  flex: 0 0 auto;
+  margin-top: -3px;
+  color: var(--pink);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.detail-favorite:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .popup-location {
@@ -550,11 +707,26 @@ h1 {
   border-bottom: 1px solid var(--line);
 }
 
+.popup-program-entry--favorite {
+  margin-inline: -6px;
+  padding-inline: 8px 6px;
+  background: #fff3f9;
+  box-shadow: inset 3px 0 0 var(--pink);
+}
+
 .popup-program-entry:last-child {
   border-bottom: 0;
 }
 
+.popup-program-entry-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .popup-program-meta {
+  min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-wrap: wrap;
   gap: 5px 9px;
@@ -562,6 +734,14 @@ h1 {
   color: var(--violet-dark);
   font-size: 0.67rem;
   font-weight: 800;
+}
+
+.program-favorite {
+  flex: 0 0 auto;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
 }
 
 .popup-program-entry h3 {
@@ -661,6 +841,11 @@ h1 {
   line-height: 1.25;
 }
 
+.map-popup-favorite {
+  margin-right: 5px;
+  color: var(--pink);
+}
+
 .map-popup-list span {
   flex: 0 0 auto;
   color: var(--muted);
@@ -740,12 +925,26 @@ h1 {
     font-size: 1rem;
   }
 
-  .museum-card {
-    min-height: 52px;
-    padding: 9px 10px;
+  #favorites-filter {
+    min-height: 44px;
   }
 
-  .museum-marker::before {
+  .museum-card {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    min-height: 52px;
+  }
+
+  .museum-card-main {
+    min-height: 52px;
+    padding: 9px 6px 9px 10px;
+  }
+
+  .card-favorite {
+    width: 44px;
+    min-height: 52px;
+  }
+
+  .museum-marker:not(.museum-marker--favorite)::before {
     content: "";
     position: absolute;
     inset: -8px;
@@ -776,6 +975,13 @@ h1 {
   .detail-close {
     top: 6px;
     right: 6px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .detail-favorite,
+  .program-favorite {
+    min-width: 44px;
     width: 44px;
     height: 44px;
   }
