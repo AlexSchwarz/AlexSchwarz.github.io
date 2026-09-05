@@ -71,13 +71,30 @@ function markerIcon(group) {
 }
 
 function popupOptions() {
-  const mobile = window.matchMedia("(max-width: 680px)").matches;
+  const mobile = isMobileLayout();
   return {
     maxWidth: 290,
     minWidth: 230,
     autoPanPaddingTopLeft: mobile || museumList.hidden ? L.point(12, 12) : L.point(306, 14),
-    autoPanPaddingBottomRight: L.point(12, 12),
+    autoPanPaddingBottomRight: mobile ? L.point(64, 12) : L.point(12, 12),
   };
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 680px)").matches;
+}
+
+function keepSelectedLocationVisible(group) {
+  if (!group?.marker || !isMobileLayout() || detailPanel.hidden) return;
+
+  window.requestAnimationFrame(() => {
+    const panelHeight = detailPanel.getBoundingClientRect().height;
+    map.panInside(group.marker.getLatLng(), {
+      paddingTopLeft: L.point(16, 80),
+      paddingBottomRight: L.point(64, panelHeight + 20),
+      animate: true,
+    });
+  });
 }
 
 function sharedLocationPicker(group, selectedMuseum) {
@@ -200,7 +217,8 @@ function openDetailPanel(museum, location, group) {
   setSelectedLocation(group);
   detailContent.innerHTML = detailPanelContent(museum, location, group);
   detailPanel.hidden = false;
-  if (window.matchMedia("(max-width: 680px)").matches) setMuseumListVisible(false);
+  if (isMobileLayout()) setMuseumListVisible(false);
+  keepSelectedLocationVisible(group);
 }
 
 function closeDetailPanel() {
@@ -429,6 +447,23 @@ fitButton.addEventListener("click", fitVisibleMarkers);
 searchInput.addEventListener("input", applySearch);
 hideListButton.addEventListener("click", () => setMuseumListVisible(false));
 showListButton.addEventListener("click", () => setMuseumListVisible(true));
+
+let resizeFrame = 0;
+function refreshMapLayout() {
+  window.cancelAnimationFrame(resizeFrame);
+  resizeFrame = window.requestAnimationFrame(() => {
+    map.invalidateSize();
+    keepSelectedLocationVisible(selectedLocationGroup);
+  });
+}
+
+window.addEventListener("resize", refreshMapLayout);
+window.visualViewport?.addEventListener("resize", refreshMapLayout);
+
+const detailResizeObserver = new ResizeObserver(() => {
+  keepSelectedLocationVisible(selectedLocationGroup);
+});
+detailResizeObserver.observe(detailPanel);
 
 async function loadMuseums() {
   try {

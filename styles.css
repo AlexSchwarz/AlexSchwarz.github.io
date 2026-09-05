@@ -22,6 +22,8 @@ body {
 
 body {
   margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
   color: var(--ink);
   background: var(--paper);
   font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
@@ -670,44 +672,147 @@ h1 {
 }
 
 @media (max-width: 680px) {
+  html,
+  body,
+  .app-shell,
   .map-frame {
-    min-height: 100svh;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
   }
 
   .museum-list {
     top: auto;
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
     width: auto;
-    max-height: 190px;
+    max-height: min(38dvh, 300px);
   }
 
   .show-list {
     top: auto;
-    bottom: 8px;
-    left: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    min-height: 44px;
   }
 
   .detail-panel {
     top: auto;
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
     width: auto;
-    max-height: min(72svh, 620px);
+    max-height: min(70dvh, 620px);
   }
 
   .popup-card {
-    max-height: min(72svh, 620px);
+    max-height: min(70dvh, 620px);
   }
 
   .list-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 8px 10px;
   }
 
+  .list-heading > div:first-child {
+    min-width: 0;
+  }
+
+  .list-heading p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #fit-map,
+  #hide-list {
+    min-height: 44px;
+  }
+
+  #hide-list {
+    width: 44px;
+  }
+
+  .museum-search input {
+    height: 44px;
+    font-size: 1rem;
+  }
+
   .museum-card {
-    padding: 8px 10px;
+    min-height: 52px;
+    padding: 9px 10px;
+  }
+
+  .museum-marker::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+  }
+
+  .leaflet-popup-content {
+    width: min(276px, calc(100vw - 24px)) !important;
+  }
+
+  .map-popup-list button {
+    min-height: 48px;
+  }
+
+  .map-popup-top {
+    padding-right: 48px;
+  }
+
+  .leaflet-container a.leaflet-popup-close-button {
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    color: var(--white);
+    font-size: 1.4rem;
+    line-height: 42px;
+  }
+
+  .detail-close {
+    top: 6px;
+    right: 6px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .popup-top {
+    padding: 16px 16px 12px;
+  }
+
+  .popup-kicker {
+    gap: 8px;
+    margin-right: 36px;
+  }
+
+  .popup-card h2 {
+    font-size: 1.15rem;
+  }
+
+  .popup-body {
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior: contain;
+  }
+
+  .popup-actions {
+    gap: 8px;
+  }
+
+  .popup-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 4px;
+  }
+
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
   }
 }
 
