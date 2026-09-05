@@ -6,6 +6,11 @@ const warnings = [];
 const ids = new Set();
 const sources = {};
 const coordinateGroups = new Map();
+const programCategoryParams = {
+  Veranstaltung: "event-category",
+  Ausstellung: "exhibition-category",
+  "Essen & Trinken": "culinary-category",
+};
 
 for (const museum of museums) {
   if (ids.has(museum.id)) errors.push(`Duplicate ID: ${museum.id}`);
@@ -46,6 +51,21 @@ for (const museum of museums) {
     }
     if (entry.detailUrl && !/^https?:\/\//.test(entry.detailUrl)) {
       errors.push(`${museum.id} ${museum.title}: programme entry has relative detailUrl`);
+    }
+    if (entry.detailUrl) {
+      const detailUrl = new URL(entry.detailUrl);
+      if (detailUrl.hostname !== "langenacht-zuerich.ch" || detailUrl.pathname !== "/programm") {
+        errors.push(`${museum.id} ${museum.title}: programme entry uses unsupported detail host`);
+      }
+      if (detailUrl.searchParams.get("museum") !== String(museum.id)) {
+        errors.push(`${museum.id} ${museum.title}: programme entry URL targets another museum`);
+      }
+      if (detailUrl.searchParams.get("searchTerm") !== entry.title) {
+        errors.push(`${museum.id} ${museum.title}: programme entry URL has the wrong search term`);
+      }
+      if (detailUrl.searchParams.get("category") !== programCategoryParams[entry.category]) {
+        errors.push(`${museum.id} ${museum.title}: programme entry URL has the wrong category`);
+      }
     }
   }
 

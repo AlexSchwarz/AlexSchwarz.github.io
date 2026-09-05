@@ -2,6 +2,11 @@ import { MUSEUMS_API, absoluteUrl, htmlToText, normalizedAddress, writeJson } fr
 
 const PROGRAM_API = "https://langenacht-zuerich.ch/api/longnight";
 const PROGRAM_PARAMS = "culture=de-ch&limit=1000&programNodeId=7383&skip=0";
+const PROGRAM_CATEGORY_PARAMS = {
+  Veranstaltung: "event-category",
+  Ausstellung: "exhibition-category",
+  "Essen & Trinken": "culinary-category",
+};
 
 function programUrlFor(record) {
   const url = absoluteUrl(record.detailUrl);
@@ -33,6 +38,24 @@ if (!Array.isArray(sourceRecords)) {
 }
 
 const programByMuseum = new Map();
+const museumIdsByTitle = new Map(
+  sourceRecords.map((record) => [record.title?.trim(), record.id]),
+);
+
+function programEntryUrl(entry, category) {
+  const museumId = museumIdsByTitle.get(entry.museum?.trim());
+  if (!museumId) throw new Error(`Programme entry has unknown museum: ${entry.museum}`);
+
+  const url = new URL("/programm", PROGRAM_API);
+  url.searchParams.set("culture", "de-ch");
+  url.searchParams.set("museum", String(museumId));
+  url.searchParams.set("searchTerm", htmlToText(entry.title));
+  url.searchParams.set("limit", "1000");
+  url.searchParams.set("skip", "0");
+  url.searchParams.set("programNodeId", "7383");
+  url.searchParams.set("category", PROGRAM_CATEGORY_PARAMS[category]);
+  return url.href;
+}
 
 function addProgramEntry(entry, category, fallbackTime = "") {
   const items = programByMuseum.get(entry.museum) ?? [];
@@ -42,7 +65,7 @@ function addProgramEntry(entry, category, fallbackTime = "") {
     title: htmlToText(entry.title),
     description: htmlToText(entry.lead),
     time: htmlToText(entry.experienceInfo) || htmlToText(fallbackTime),
-    detailUrl: absoluteUrl(entry.detailUrl),
+    detailUrl: programEntryUrl(entry, category),
   });
   programByMuseum.set(entry.museum, items);
 }
