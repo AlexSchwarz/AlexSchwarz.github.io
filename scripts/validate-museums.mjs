@@ -38,11 +38,14 @@ for (const museum of museums) {
     errors.push(`${museum.id} ${museum.title}: missing programme entries`);
   }
   for (const entry of museum.program ?? []) {
-    for (const field of ["title", "category"]) {
+    for (const field of ["title", "category", "detailUrl"]) {
       if (!entry[field]) errors.push(`${museum.id} ${museum.title}: programme entry missing ${field}`);
       if (typeof entry[field] === "string" && /<[^>]+>/.test(entry[field])) {
         errors.push(`${museum.id} ${museum.title}: HTML remains in programme ${field}`);
       }
+    }
+    if (entry.detailUrl && !/^https?:\/\//.test(entry.detailUrl)) {
+      errors.push(`${museum.id} ${museum.title}: programme entry has relative detailUrl`);
     }
   }
 

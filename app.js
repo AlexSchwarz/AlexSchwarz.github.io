@@ -207,7 +207,14 @@ function programContent(entries = [], museumId) {
                     title="${action}"
                   ><span class="favorite-heart" aria-hidden="true">${active ? "♥" : "♡"}</span></button>
                 </div>
-                <h3>${escapeHtml(entry.title)}</h3>
+                <h3>
+                  <a
+                    class="program-entry-link"
+                    href="${escapeHtml(entry.detailUrl)}"
+                    target="_blank"
+                    rel="noreferrer"
+                  >${escapeHtml(entry.title)}</a>
+                </h3>
                 ${entry.description ? `<p>${escapeHtml(entry.description)}</p>` : ""}
               </article>
             `;

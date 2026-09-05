@@ -751,6 +751,20 @@ h1 {
   line-height: 1.25;
 }
 
+.program-entry-link {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--violet) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.program-entry-link:hover,
+.program-entry-link:focus-visible {
+  color: var(--violet);
+  text-decoration-color: currentColor;
+}
+
 .popup-program-entry p,
 .popup-program-empty {
   margin: 4px 0 0;
